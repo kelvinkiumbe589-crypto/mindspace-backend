@@ -1,17 +1,17 @@
 spring.datasource.url=jdbc:postgresql://localhost:5432/mindspace
 spring.datasource.username=postgres
-spring.datasource.password=3560
+spring.datasource.password=YOUR_DB_PASSWORD
 spring.datasource.driver-class-name=org.postgresql.Driver
 spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 spring.jpa.open-in-view=false
 
-app.jwt.secret=mindspace-super-secret-jwt-key-2024-change-in-production
+app.jwt.secret=YOUR_JWT_SECRET
 app.jwt.expiration=86400000
 
-app.gemini.api-key=AQ.Ab8RN6JkAfxaAP3Mh-zAmz4Sbp8JCVu0O6MY6eK7OotAOF1cXA
+app.gemini.api-key=YOUR_GEMINI_API_KEY
 
-spring.security.oauth2.client.registration.google.client-id=581878709171-535agfrq1cae8m4gk2mueobfa16gg3u8.apps.googleusercontent.com
-spring.security.oauth2.client.registration.google.client-secret=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
+spring.security.oauth2.client.registration.google.client-id=YOUR_GOOGLE_CLIENT_ID
+spring.security.oauth2.client.registration.google.client-secret=YOUR_GOOGLE_CLIENT_SECRET
 spring.security.oauth2.client.registration.google.scope=email,profile

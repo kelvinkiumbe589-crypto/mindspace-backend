@@ -22,6 +22,10 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
+    // Trusted-device tokens live much longer than a session and only serve to
+    // let a known browser skip the login OTP.
+    private static final long DEVICE_EXPIRATION = 30L * 24 * 60 * 60 * 1000; // 30 days
+
     public String generateToken(String email) {
         return Jwts.builder()
                 .subject(email)
@@ -29,6 +33,37 @@ public class JwtUtil {
                 .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSigningKey())
                 .compact();
+    }
+
+    public String generateDeviceToken(String email) {
+        return Jwts.builder()
+                .subject(email)
+                .claim("type", "device")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + DEVICE_EXPIRATION))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    /** True if the token is a valid, unexpired device token bound to this email. */
+    public boolean isTrustedDevice(String token, String email) {
+        if (token == null || token.isBlank() || email == null) return false;
+        try {
+            Claims c = parseClaims(token);
+            return "device".equals(c.get("type", String.class))
+                    && email.equalsIgnoreCase(c.getSubject());
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /** Device tokens must never be accepted as session/access tokens. */
+    public boolean isDeviceToken(String token) {
+        try {
+            return "device".equals(parseClaims(token).get("type", String.class));
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
     }
 
     public String extractEmail(String token) {

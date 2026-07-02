@@ -34,10 +34,16 @@ public class AuthDto {
         @NotBlank(message = "Password is required")
         private String password;
 
+        // Optional: a previously-issued trusted-device token; lets a known
+        // browser skip the OTP.
+        private String deviceToken;
+
         public String getEmail() { return email; }
         public String getPassword() { return password; }
+        public String getDeviceToken() { return deviceToken; }
         public void setEmail(String email) { this.email = email; }
         public void setPassword(String password) { this.password = password; }
+        public void setDeviceToken(String deviceToken) { this.deviceToken = deviceToken; }
     }
 
     public static class VerifyRequest {
@@ -50,12 +56,18 @@ public class AuthDto {
         @NotBlank(message = "Purpose is required")
         private String purpose; // REGISTER or LOGIN
 
+        // Optional: when true, return a trusted-device token so this browser
+        // can skip the OTP on future logins.
+        private boolean trustDevice;
+
         public String getEmail() { return email; }
         public String getCode() { return code; }
         public String getPurpose() { return purpose; }
+        public boolean isTrustDevice() { return trustDevice; }
         public void setEmail(String email) { this.email = email; }
         public void setCode(String code) { this.code = code; }
         public void setPurpose(String purpose) { this.purpose = purpose; }
+        public void setTrustDevice(boolean trustDevice) { this.trustDevice = trustDevice; }
     }
 
     public static class ResendRequest {
@@ -92,6 +104,7 @@ public class AuthDto {
         private String username;
         private String email;
         private String role;
+        private String deviceToken; // present only when the user opted to trust this device
 
         public AuthResponse(String token, String username, String email, String role) {
             this.token = token;
@@ -104,5 +117,7 @@ public class AuthDto {
         public String getUsername() { return username; }
         public String getEmail() { return email; }
         public String getRole() { return role; }
+        public String getDeviceToken() { return deviceToken; }
+        public void setDeviceToken(String deviceToken) { this.deviceToken = deviceToken; }
     }
 }

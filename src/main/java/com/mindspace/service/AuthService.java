@@ -80,11 +80,20 @@ public class AuthService {
                 "We sent a 6-digit verification code to " + request.getEmail());
     }
 
-    // Step 1 of login: validate credentials, then email a code.
-    public AuthDto.PendingResponse login(AuthDto.LoginRequest request) {
+    // Step 1 of login: validate credentials. A recognised device skips the OTP
+    // and gets a token straight away; otherwise we email a code.
+    // Returns AuthResponse (trusted device) or PendingResponse (OTP required).
+    public Object login(AuthDto.LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
+
+        if (jwtUtil.isTrustedDevice(request.getDeviceToken(), request.getEmail())) {
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+            return issueToken(user);
+        }
+
         otpService.issue(request.getEmail(), EmailOtp.Purpose.LOGIN, null, null);
         return new AuthDto.PendingResponse(request.getEmail(),
                 "We sent a 6-digit verification code to " + request.getEmail());
@@ -95,6 +104,7 @@ public class AuthService {
         EmailOtp.Purpose purpose = parsePurpose(request.getPurpose());
         EmailOtp otp = otpService.verify(request.getEmail(), purpose, request.getCode());
 
+        User user;
         if (purpose == EmailOtp.Purpose.REGISTER) {
             if (userRepository.existsByEmail(otp.getEmail())) {
                 throw new IllegalArgumentException("Email is already registered");
@@ -102,19 +112,23 @@ public class AuthService {
             if (userRepository.existsByUsername(otp.getUsername())) {
                 throw new IllegalArgumentException("Username is already taken");
             }
-            User user = User.builder()
+            user = User.builder()
                     .username(otp.getUsername())
                     .email(otp.getEmail())
                     .passwordHash(otp.getPasswordHash())
                     .role(User.Role.USER)
                     .build();
             userRepository.save(user);
-            return issueToken(user);
+        } else {
+            user = userRepository.findByEmail(otp.getEmail())
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         }
 
-        User user = userRepository.findByEmail(otp.getEmail())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        return issueToken(user);
+        AuthDto.AuthResponse response = issueToken(user);
+        if (request.isTrustDevice()) {
+            response.setDeviceToken(jwtUtil.generateDeviceToken(user.getEmail()));
+        }
+        return response;
     }
 
     public AuthDto.PendingResponse resend(AuthDto.ResendRequest request) {

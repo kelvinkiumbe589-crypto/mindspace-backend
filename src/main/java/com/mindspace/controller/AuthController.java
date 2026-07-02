@@ -23,8 +23,9 @@ public class AuthController {
         return ResponseEntity.ok(authService.register(request));
     }
 
+    // Returns AuthResponse (trusted device) or PendingResponse (OTP required).
     @PostMapping("/login")
-    public ResponseEntity<AuthDto.PendingResponse> login(
+    public ResponseEntity<?> login(
             @Valid @RequestBody AuthDto.LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }

@@ -40,7 +40,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
 
-        if (!jwtUtil.isTokenValid(token)) {
+        // A device-trust token is only for skipping the login OTP — never a session.
+        if (!jwtUtil.isTokenValid(token) || jwtUtil.isDeviceToken(token)) {
             filterChain.doFilter(request, response);
             return;
         }

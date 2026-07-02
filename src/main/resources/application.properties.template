@@ -38,3 +38,9 @@ app.mpesa.shortcode=174379
 app.mpesa.passkey=YOUR_LIPA_NA_MPESA_PASSKEY
 # Public HTTPS URL Safaricom posts the result to (ngrok URL or deployed backend)
 app.mpesa.callback-url=https://YOUR_PUBLIC_HOST/api/payments/callback
+# B2C payout (send money out to a phone, e.g. the therapist). From Daraja Test Credentials.
+app.mpesa.b2c.shortcode=YOUR_B2C_SHORTCODE
+app.mpesa.b2c.initiator-name=testapi
+app.mpesa.b2c.security-credential=YOUR_B2C_SECURITY_CREDENTIAL
+app.mpesa.b2c.result-url=https://YOUR_PUBLIC_HOST/api/payments/b2c-result
+app.mpesa.b2c.timeout-url=https://YOUR_PUBLIC_HOST/api/payments/b2c-timeout

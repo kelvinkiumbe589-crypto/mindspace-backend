@@ -27,6 +27,12 @@ public class MpesaService {
     @Value("${app.mpesa.passkey}") private String passkey;
     @Value("${app.mpesa.callback-url}") private String callbackUrl;
 
+    @Value("${app.mpesa.b2c.shortcode}") private String b2cShortcode;
+    @Value("${app.mpesa.b2c.initiator-name}") private String b2cInitiator;
+    @Value("${app.mpesa.b2c.security-credential}") private String b2cSecurityCredential;
+    @Value("${app.mpesa.b2c.result-url}") private String b2cResultUrl;
+    @Value("${app.mpesa.b2c.timeout-url}") private String b2cTimeoutUrl;
+
     private final RestClient rest = RestClient.create();
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -102,6 +108,36 @@ public class MpesaService {
         try {
             return rest.post()
                     .uri(baseUrl + "/mpesa/stkpushquery/v1/query")
+                    .header("Authorization", "Bearer " + token)
+                    .header("Content-Type", "application/json")
+                    .body(body)
+                    .retrieve()
+                    .body(Map.class);
+        } catch (RestClientResponseException e) {
+            return parseError(e);
+        }
+    }
+
+    /** B2C: pay money OUT from the business shortcode to a customer's phone (e.g. the therapist). */
+    public Map<String, Object> b2cPayment(String phone, int amount, String remarks) {
+        String token = getAccessToken();
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("OriginatorConversationID", java.util.UUID.randomUUID().toString());
+        body.put("InitiatorName", b2cInitiator);
+        body.put("SecurityCredential", b2cSecurityCredential);
+        body.put("CommandID", "BusinessPayment");
+        body.put("Amount", Math.max(1, amount));
+        body.put("PartyA", b2cShortcode);
+        body.put("PartyB", normalizePhone(phone));
+        body.put("Remarks", remarks != null && !remarks.isBlank() ? remarks : "MindSpace therapist payout");
+        body.put("QueueTimeOutURL", b2cTimeoutUrl);
+        body.put("ResultURL", b2cResultUrl);
+        body.put("Occasion", "TherapyPayout");
+
+        try {
+            return rest.post()
+                    .uri(baseUrl + "/mpesa/b2c/v3/paymentrequest")
                     .header("Authorization", "Bearer " + token)
                     .header("Content-Type", "application/json")
                     .body(body)

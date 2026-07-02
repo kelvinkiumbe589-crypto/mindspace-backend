@@ -44,6 +44,27 @@ public class PaymentController {
         return ResponseEntity.ok(Map.of("ResultCode", 0, "ResultDesc", "Accepted"));
     }
 
+    // B2C payout: send the paid money out to a phone (e.g. the therapist).
+    @PostMapping("/b2c")
+    public ResponseEntity<Map<String, Object>> b2c(@RequestBody Map<String, Object> req) {
+        String phone = String.valueOf(req.getOrDefault("phone", ""));
+        int amount = parseAmount(req.get("amount"));
+        String remarks = req.get("remarks") != null ? String.valueOf(req.get("remarks")) : null;
+        return ResponseEntity.ok(mpesaService.b2cPayment(phone, amount, remarks));
+    }
+
+    @PostMapping("/b2c-result")
+    public ResponseEntity<Map<String, Object>> b2cResult(@RequestBody(required = false) Map<String, Object> payload) {
+        System.out.println("M-Pesa B2C result: " + payload);
+        return ResponseEntity.ok(Map.of("ResultCode", 0, "ResultDesc", "Accepted"));
+    }
+
+    @PostMapping("/b2c-timeout")
+    public ResponseEntity<Map<String, Object>> b2cTimeout(@RequestBody(required = false) Map<String, Object> payload) {
+        System.out.println("M-Pesa B2C timeout: " + payload);
+        return ResponseEntity.ok(Map.of("ResultCode", 0, "ResultDesc", "Accepted"));
+    }
+
     private int parseAmount(Object raw) {
         if (raw == null) return 1;
         try {

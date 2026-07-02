@@ -57,7 +57,11 @@ public class OtpService {
     /**
      * Validate the submitted code. On success the OTP row is consumed (deleted)
      * and returned so the caller can read any stashed registration details.
+     *
+     * noRollbackFor is essential: a wrong code throws, but we must still persist
+     * the incremented attempt counter (and expired/exhausted row deletions).
      */
+    @Transactional(noRollbackFor = IllegalArgumentException.class)
     public EmailOtp verify(String email, EmailOtp.Purpose purpose, String code) {
         EmailOtp otp = repo.findFirstByEmailAndPurposeOrderByCreatedAtDesc(email, purpose)
                 .orElseThrow(() -> new IllegalArgumentException("No verification in progress. Please start again."));

@@ -40,6 +40,53 @@ public class AuthDto {
         public void setPassword(String password) { this.password = password; }
     }
 
+    public static class VerifyRequest {
+        @NotBlank(message = "Email is required")
+        private String email;
+
+        @NotBlank(message = "Verification code is required")
+        private String code;
+
+        @NotBlank(message = "Purpose is required")
+        private String purpose; // REGISTER or LOGIN
+
+        public String getEmail() { return email; }
+        public String getCode() { return code; }
+        public String getPurpose() { return purpose; }
+        public void setEmail(String email) { this.email = email; }
+        public void setCode(String code) { this.code = code; }
+        public void setPurpose(String purpose) { this.purpose = purpose; }
+    }
+
+    public static class ResendRequest {
+        @NotBlank(message = "Email is required")
+        private String email;
+
+        @NotBlank(message = "Purpose is required")
+        private String purpose; // REGISTER or LOGIN
+
+        public String getEmail() { return email; }
+        public String getPurpose() { return purpose; }
+        public void setEmail(String email) { this.email = email; }
+        public void setPurpose(String purpose) { this.purpose = purpose; }
+    }
+
+    /** Returned by register/login when an email code has been sent and must be verified. */
+    public static class PendingResponse {
+        private final boolean otpRequired = true;
+        private final String email;
+        private final String message;
+
+        public PendingResponse(String email, String message) {
+            this.email = email;
+            this.message = message;
+        }
+
+        public boolean isOtpRequired() { return otpRequired; }
+        public String getEmail() { return email; }
+        public String getMessage() { return message; }
+    }
+
     public static class AuthResponse {
         private String token;
         private String username;

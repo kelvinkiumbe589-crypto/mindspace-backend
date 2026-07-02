@@ -26,3 +26,15 @@ app.contact.recipient=kelvinkiumbe589@gmail.com
 spring.security.oauth2.client.registration.google.client-id=YOUR_GOOGLE_CLIENT_ID
 spring.security.oauth2.client.registration.google.client-secret=YOUR_GOOGLE_CLIENT_SECRET
 spring.security.oauth2.client.registration.google.scope=email,profile
+
+# M-Pesa Daraja (Lipa Na M-Pesa Online / STK push)
+# Sandbox base-url: https://sandbox.safaricom.co.ke  |  Production: https://api.safaricom.co.ke
+app.mpesa.env=sandbox
+app.mpesa.base-url=https://sandbox.safaricom.co.ke
+app.mpesa.consumer-key=YOUR_DARAJA_CONSUMER_KEY
+app.mpesa.consumer-secret=YOUR_DARAJA_CONSUMER_SECRET
+# Sandbox test values: shortcode 174379 + the public sandbox passkey
+app.mpesa.shortcode=174379
+app.mpesa.passkey=YOUR_LIPA_NA_MPESA_PASSKEY
+# Public HTTPS URL Safaricom posts the result to (ngrok URL or deployed backend)
+app.mpesa.callback-url=https://YOUR_PUBLIC_HOST/api/payments/callback

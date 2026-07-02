@@ -40,6 +40,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/ai/**").permitAll()
                         .requestMatchers("/api/contact").permitAll()
+                        .requestMatchers("/api/payments/**").permitAll()
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/login/oauth2/**").permitAll()
                         .requestMatchers("/api/forum/**").authenticated()

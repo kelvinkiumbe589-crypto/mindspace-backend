@@ -6,7 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -21,12 +21,13 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    // Local encoder avoids a bean cycle (PasswordEncoder is defined in SecurityConfig,
+    // which itself depends on this handler). The value is a throwaway — OAuth users log in via Google.
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public OAuth2SuccessHandler(JwtUtil jwtUtil, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public OAuth2SuccessHandler(JwtUtil jwtUtil, UserRepository userRepository) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
     }
 
     @Override

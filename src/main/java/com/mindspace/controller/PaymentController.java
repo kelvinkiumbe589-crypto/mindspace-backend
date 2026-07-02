@@ -1,25 +1,73 @@
 package com.mindspace.controller;
 
 import com.mindspace.service.MpesaService;
+import com.mindspace.service.PesapalService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 /**
- * Public M-Pesa payment endpoints for the booking flow.
- * - POST /api/payments/stk    : trigger an STK push to the phone
- * - POST /api/payments/query  : poll the status of a push
- * - POST /api/payments/callback : Safaricom posts the final result here
+ * Public payment endpoints for the booking flow.
+ * Pesapal (aggregator — M-Pesa/card/bank in one hosted checkout):
+ * - POST /api/payments/pesapal/order  : create an order, get the checkout URL
+ * - GET  /api/payments/pesapal/status : poll the order status
+ * - POST /api/payments/pesapal/ipn    : Pesapal posts payment notifications here
+ * Legacy direct M-Pesa (STK push + B2C) endpoints are kept below.
  */
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
 
     private final MpesaService mpesaService;
+    private final PesapalService pesapalService;
 
-    public PaymentController(MpesaService mpesaService) {
+    public PaymentController(MpesaService mpesaService, PesapalService pesapalService) {
         this.mpesaService = mpesaService;
+        this.pesapalService = pesapalService;
+    }
+
+    // ── Pesapal ──
+
+    @PostMapping("/pesapal/order")
+    public ResponseEntity<Map<String, Object>> pesapalOrder(@RequestBody Map<String, Object> req) {
+        if (!pesapalService.isConfigured()) {
+            return ResponseEntity.status(503).body(Map.of("error", "Pesapal is not configured on the server."));
+        }
+        double amount = parseAmountDouble(req.get("amount"));
+        String desc = str(req.get("description"));
+        String email = str(req.get("email"));
+        String phone = str(req.get("phone"));
+        String firstName = str(req.get("firstName"));
+        String lastName = str(req.get("lastName"));
+        try {
+            return ResponseEntity.ok(pesapalService.submitOrder(amount, desc, email, phone, firstName, lastName));
+        } catch (Exception e) {
+            return ResponseEntity.status(502).body(Map.of("error", "Could not start Pesapal checkout: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/pesapal/status")
+    public ResponseEntity<Map<String, Object>> pesapalStatus(@RequestParam String orderTrackingId) {
+        try {
+            return ResponseEntity.ok(pesapalService.getStatus(orderTrackingId));
+        } catch (Exception e) {
+            return ResponseEntity.status(502).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Pesapal posts an IPN here when a payment's status changes. Must return 200.
+    @RequestMapping(value = "/pesapal/ipn", method = {RequestMethod.POST, RequestMethod.GET})
+    public ResponseEntity<Map<String, Object>> pesapalIpn(@RequestParam(required = false) String OrderTrackingId,
+                                                          @RequestParam(required = false) String OrderNotificationType,
+                                                          @RequestParam(required = false) String OrderMerchantReference) {
+        System.out.println("Pesapal IPN: tracking=" + OrderTrackingId + " type=" + OrderNotificationType + " ref=" + OrderMerchantReference);
+        Map<String, Object> ack = Map.of(
+                "orderNotificationType", OrderNotificationType == null ? "" : OrderNotificationType,
+                "orderTrackingId", OrderTrackingId == null ? "" : OrderTrackingId,
+                "orderMerchantReference", OrderMerchantReference == null ? "" : OrderMerchantReference,
+                "status", 200);
+        return ResponseEntity.ok(ack);
     }
 
     @PostMapping("/stk")
@@ -72,5 +120,18 @@ public class PaymentController {
         } catch (Exception e) {
             return 1;
         }
+    }
+
+    private double parseAmountDouble(Object raw) {
+        if (raw == null) return 1;
+        try {
+            return Double.parseDouble(String.valueOf(raw).replaceAll("[^0-9.]", ""));
+        } catch (Exception e) {
+            return 1;
+        }
+    }
+
+    private String str(Object raw) {
+        return raw == null ? "" : String.valueOf(raw);
     }
 }

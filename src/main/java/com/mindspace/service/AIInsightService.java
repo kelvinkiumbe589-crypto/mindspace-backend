@@ -26,6 +26,33 @@ public class AIInsightService {
         this.restClient = RestClient.create();
     }
 
+    /**
+     * Stateless assistant used by the dashboard. Given a summary of the user's
+     * recent moods and an optional question, returns a Gemini reply. When the
+     * question is blank it produces a proactive wellness insight instead.
+     */
+    public String assistantReply(String moodContext, String question) {
+        String context = (moodContext == null || moodContext.isBlank())
+                ? "The user has not logged any moods yet."
+                : moodContext.length() > 4000 ? moodContext.substring(0, 4000) : moodContext;
+
+        String prompt;
+        if (question == null || question.isBlank()) {
+            prompt = "You are a compassionate mental wellness assistant for the MindSpace app. "
+                    + "Based on the user's recent mood entries below, give a short, warm, personalised insight "
+                    + "(3-4 sentences). Point out one pattern you notice, offer one practical tip, and end with "
+                    + "encouragement. Do not diagnose or replace professional help.\n\nRecent moods:\n" + context;
+        } else {
+            String q = question.length() > 1000 ? question.substring(0, 1000) : question;
+            prompt = "You are a compassionate mental wellness assistant for the MindSpace app. "
+                    + "Use the user's recent mood entries as context, then answer their question in a warm, "
+                    + "supportive and practical way (keep it concise). If the question is a crisis or medical issue, "
+                    + "gently encourage them to seek professional help. Do not diagnose.\n\n"
+                    + "Recent moods:\n" + context + "\n\nUser question: " + q;
+        }
+        return callGeminiAPI(prompt);
+    }
+
     public MoodDto.MoodResponse generateInsight(UUID moodId) {
         MoodEntry entry = moodEntryRepository.findById(moodId)
                 .orElseThrow(() -> new IllegalArgumentException("Mood entry not found"));
@@ -66,7 +93,7 @@ public class AIInsightService {
     private String callGeminiAPI(String prompt) {
         try {
             String url = "https://generativelanguage.googleapis.com/v1beta/models/" +
-                         "gemini-1.5-flash:generateContent?key=" + geminiApiKey;
+                         "gemini-2.5-flash:generateContent?key=" + geminiApiKey;
 
             Map<String, Object> requestBody = Map.of(
                 "contents", List.of(

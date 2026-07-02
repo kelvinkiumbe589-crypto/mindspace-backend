@@ -12,6 +12,17 @@ app.jwt.expiration=86400000
 
 app.gemini.api-key=YOUR_GEMINI_API_KEY
 
+# Support/contact form email (optional).
+# Leave blank to disable server-side sending; the frontend then falls back to a mailto: link.
+# For Gmail, create an App Password (Google Account > Security > App passwords) and use it below.
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=kelvinkiumbe589@gmail.com
+spring.mail.password=YOUR_GMAIL_APP_PASSWORD
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+app.contact.recipient=kelvinkiumbe589@gmail.com
+
 spring.security.oauth2.client.registration.google.client-id=YOUR_GOOGLE_CLIENT_ID
 spring.security.oauth2.client.registration.google.client-secret=YOUR_GOOGLE_CLIENT_SECRET
 spring.security.oauth2.client.registration.google.scope=email,profile

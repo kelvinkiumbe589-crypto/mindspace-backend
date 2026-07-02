@@ -1,5 +1,6 @@
 package com.mindspace.config;
 import com.mindspace.security.JwtFilter;
+import com.mindspace.security.OAuth2SuccessHandler;
 import com.mindspace.service.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,10 +24,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
     private final JwtFilter jwtFilter;
     private final UserDetailsServiceImpl userDetailsService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
-    public SecurityConfig(JwtFilter jwtFilter, UserDetailsServiceImpl userDetailsService) {
+    public SecurityConfig(JwtFilter jwtFilter, UserDetailsServiceImpl userDetailsService, OAuth2SuccessHandler oAuth2SuccessHandler) {
         this.jwtFilter = jwtFilter;
         this.userDetailsService = userDetailsService;
+        this.oAuth2SuccessHandler = oAuth2SuccessHandler;
     }
 
     @Bean
@@ -35,6 +38,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/ai/**").permitAll()
+                        .requestMatchers("/api/contact").permitAll()
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/login/oauth2/**").permitAll()
                         .requestMatchers("/api/forum/**").authenticated()
@@ -45,7 +50,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .defaultSuccessUrl("http://localhost:5173/dashboard", true)
+                        .successHandler(oAuth2SuccessHandler)
                         .failureUrl("http://localhost:5173/signin?error=true")
                 )
                 .authenticationProvider(authenticationProvider())

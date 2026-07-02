@@ -10,6 +10,9 @@ spring.jpa.open-in-view=false
 app.jwt.secret=YOUR_JWT_SECRET
 app.jwt.expiration=86400000
 
+# Comma-separated emails auto-promoted to ADMIN (for the admin support inbox)
+app.admin.emails=you@example.com
+
 app.gemini.api-key=YOUR_GEMINI_API_KEY
 
 # Support/contact form email (optional).

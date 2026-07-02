@@ -43,6 +43,16 @@ public class MoodService {
                 .toList();
     }
 
+    public void deleteMood(String email, UUID moodId) {
+        User user = getUser(email);
+        MoodEntry entry = moodEntryRepository.findById(moodId)
+                .orElseThrow(() -> new IllegalArgumentException("Mood entry not found"));
+        if (!entry.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("Not allowed to delete this entry");
+        }
+        moodEntryRepository.delete(entry);
+    }
+
     public MoodDto.MoodResponse saveInsight(UUID moodId, String insight) {
         MoodEntry entry = moodEntryRepository.findById(moodId)
                 .orElseThrow(() -> new IllegalArgumentException("Mood entry not found"));

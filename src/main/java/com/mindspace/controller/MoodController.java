@@ -44,4 +44,13 @@ public class MoodController {
     public ResponseEntity<MoodDto.MoodResponse> getInsight(@PathVariable UUID id) {
         return ResponseEntity.ok(aiInsightService.generateInsight(id));
     }
+
+    // DELETE /api/moods/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMood(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID id) {
+        moodService.deleteMood(userDetails.getUsername(), id);
+        return ResponseEntity.noContent().build();
+    }
 }

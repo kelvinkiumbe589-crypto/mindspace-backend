@@ -5,6 +5,10 @@ import com.mindspace.model.SupportMessage;
 import com.mindspace.model.User;
 import com.mindspace.repository.SupportMessageRepository;
 import com.mindspace.repository.UserRepository;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,10 +25,41 @@ public class SupportService {
 
     private final SupportMessageRepository repo;
     private final UserRepository userRepository;
+    private final JavaMailSender mailSender; // null when spring.mail.* is not configured
 
-    public SupportService(SupportMessageRepository repo, UserRepository userRepository) {
+    @Value("${app.contact.recipient:kelvinkiumbe589@gmail.com}")
+    private String adminRecipient;
+
+    @Value("${spring.mail.username:}")
+    private String fromAddress;
+
+    public SupportService(SupportMessageRepository repo, UserRepository userRepository,
+                          ObjectProvider<JavaMailSender> mailSenderProvider) {
         this.repo = repo;
         this.userRepository = userRepository;
+        this.mailSender = mailSenderProvider.getIfAvailable();
+    }
+
+    /** Best-effort email to the admin so they're notified of a new support message. */
+    private void notifyAdmin(User user, String text) {
+        if (mailSender == null || fromAddress == null || fromAddress.isBlank()) return;
+        try {
+            SimpleMailMessage mail = new SimpleMailMessage();
+            mail.setTo(adminRecipient);
+            mail.setFrom(fromAddress);
+            if (user.getEmail() != null && !user.getEmail().isBlank()) mail.setReplyTo(user.getEmail());
+            mail.setSubject("New MindSpace support message from " + user.getUsername());
+            mail.setText(
+                    "You have a new support message in MindSpace.\n\n" +
+                    "From:  " + user.getUsername() + "\n" +
+                    "Email: " + user.getEmail() + "\n\n" +
+                    "Message:\n" + text + "\n\n" +
+                    "Reply from the admin dashboard (Support tab)."
+            );
+            mailSender.send(mail);
+        } catch (Exception ignored) {
+            // never let a mail failure block saving the message
+        }
     }
 
     private User getUser(String email) {
@@ -38,7 +73,9 @@ public class SupportService {
 
     public SupportDto.MessageResponse sendUserMessage(String email, String text) {
         User user = getUser(email);
-        return toResponse(repo.save(new SupportMessage(user, text, false)));
+        SupportMessage saved = repo.save(new SupportMessage(user, text, false));
+        notifyAdmin(user, text);
+        return toResponse(saved);
     }
 
     public List<SupportDto.MessageResponse> myThread(String email) {

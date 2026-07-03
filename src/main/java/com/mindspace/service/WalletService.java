@@ -122,6 +122,27 @@ public class WalletService {
         r.status = w.getStatus().name();
         r.createdAt = w.getCreatedAt() == null ? null : w.getCreatedAt().toString();
         r.paidAt = w.getPaidAt() == null ? null : w.getPaidAt().toString();
+        profileRepo.findByUserId(w.getTherapist().getId()).ifPresent(p -> {
+            r.payoutMethod = p.getPayoutMethod();
+            if ("BANK".equalsIgnoreCase(p.getPayoutMethod())) {
+                r.payoutDetails = joinNonBlank(p.getPayoutBankName(), p.getPayoutBankAccount(), p.getPayoutAccountName());
+            } else {
+                r.payoutDetails = p.getPayoutMpesa();
+            }
+        });
+        // fall back to the phone captured on the request if no profile detail
+        if (r.payoutDetails == null || r.payoutDetails.isBlank()) r.payoutDetails = w.getPhone();
         return r;
+    }
+
+    private String joinNonBlank(String... parts) {
+        StringBuilder sb = new StringBuilder();
+        for (String p : parts) {
+            if (p != null && !p.isBlank()) {
+                if (sb.length() > 0) sb.append(" · ");
+                sb.append(p.trim());
+            }
+        }
+        return sb.toString();
     }
 }

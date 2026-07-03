@@ -35,5 +35,7 @@ public class WalletDto {
         public String status;
         public String createdAt;
         public String paidAt;
+        public String payoutMethod;   // MPESA | BANK
+        public String payoutDetails;  // where the admin should send it
     }
 }

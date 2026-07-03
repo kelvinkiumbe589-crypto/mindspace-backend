@@ -56,6 +56,22 @@ public class TherapistProfile {
     @Column(name = "available_slots", length = 255)
     private String availableSlots = "09:00,10:00,11:00,14:00,15:00,16:00";
 
+    // Where the therapist wants withdrawals sent.
+    @Column(name = "payout_method", length = 10)
+    private String payoutMethod = "MPESA"; // MPESA | BANK
+
+    @Column(name = "payout_mpesa", length = 20)
+    private String payoutMpesa;
+
+    @Column(name = "payout_bank_name", length = 80)
+    private String payoutBankName;
+
+    @Column(name = "payout_bank_account", length = 40)
+    private String payoutBankAccount;
+
+    @Column(name = "payout_account_name", length = 80)
+    private String payoutAccountName;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -76,6 +92,11 @@ public class TherapistProfile {
     public int getReviews() { return reviews; }
     public String getAvailableDays() { return availableDays; }
     public String getAvailableSlots() { return availableSlots; }
+    public String getPayoutMethod() { return payoutMethod; }
+    public String getPayoutMpesa() { return payoutMpesa; }
+    public String getPayoutBankName() { return payoutBankName; }
+    public String getPayoutBankAccount() { return payoutBankAccount; }
+    public String getPayoutAccountName() { return payoutAccountName; }
 
     public void setUser(User user) { this.user = user; }
     public void setName(String name) { this.name = name; }
@@ -90,4 +111,9 @@ public class TherapistProfile {
     public void setReviews(int reviews) { this.reviews = reviews; }
     public void setAvailableDays(String availableDays) { this.availableDays = availableDays; }
     public void setAvailableSlots(String availableSlots) { this.availableSlots = availableSlots; }
+    public void setPayoutMethod(String payoutMethod) { this.payoutMethod = payoutMethod; }
+    public void setPayoutMpesa(String payoutMpesa) { this.payoutMpesa = payoutMpesa; }
+    public void setPayoutBankName(String payoutBankName) { this.payoutBankName = payoutBankName; }
+    public void setPayoutBankAccount(String payoutBankAccount) { this.payoutBankAccount = payoutBankAccount; }
+    public void setPayoutAccountName(String payoutAccountName) { this.payoutAccountName = payoutAccountName; }
 }

@@ -101,11 +101,15 @@ public class TherapistService {
 
     public List<TherapistDto.Response> list() {
         List<TherapistDto.Response> out = new ArrayList<>();
-        for (TherapistProfile p : profileRepo.findAllByOrderByNameAsc()) out.add(toResponse(p));
+        for (TherapistProfile p : profileRepo.findAllByOrderByNameAsc()) out.add(toResponse(p, false));
         return out;
     }
 
     public TherapistDto.Response toResponse(TherapistProfile p) {
+        return toResponse(p, false);
+    }
+
+    public TherapistDto.Response toResponse(TherapistProfile p, boolean includePayout) {
         TherapistDto.Response r = new TherapistDto.Response();
         r.id = p.getId().toString();
         r.userId = p.getUser().getId().toString();
@@ -125,12 +129,19 @@ public class TherapistService {
         r.email = p.getUser().getEmail();
         r.availableDays = parseInts(p.getAvailableDays());
         r.availableSlots = parseStrs(p.getAvailableSlots());
+        if (includePayout) {
+            r.payoutMethod = p.getPayoutMethod();
+            r.payoutMpesa = p.getPayoutMpesa();
+            r.payoutBankName = p.getPayoutBankName();
+            r.payoutBankAccount = p.getPayoutBankAccount();
+            r.payoutAccountName = p.getPayoutAccountName();
+        }
         return r;
     }
 
     // ── Therapist self-service ──
     public TherapistDto.Response getOwnProfile(String email) {
-        return toResponse(ownProfile(email));
+        return toResponse(ownProfile(email), true);
     }
 
     public TherapistDto.Response updateOwnProfile(String email, TherapistDto.SelfUpdateRequest req) {
@@ -146,7 +157,12 @@ public class TherapistService {
         if (req.getAvailableSlots() != null) {
             p.setAvailableSlots(String.join(",", req.getAvailableSlots()));
         }
-        return toResponse(profileRepo.save(p));
+        if (req.getPayoutMethod() != null) p.setPayoutMethod(req.getPayoutMethod());
+        if (req.getPayoutMpesa() != null) p.setPayoutMpesa(req.getPayoutMpesa());
+        if (req.getPayoutBankName() != null) p.setPayoutBankName(req.getPayoutBankName());
+        if (req.getPayoutBankAccount() != null) p.setPayoutBankAccount(req.getPayoutBankAccount());
+        if (req.getPayoutAccountName() != null) p.setPayoutAccountName(req.getPayoutAccountName());
+        return toResponse(profileRepo.save(p), true);
     }
 
     private TherapistProfile ownProfile(String email) {

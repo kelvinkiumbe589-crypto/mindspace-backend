@@ -82,6 +82,11 @@ public class TherapistDto {
         private Boolean available;
         private List<Integer> availableDays;  // 0=Sun..6=Sat
         private List<String> availableSlots;  // "HH:MM"
+        private String payoutMethod;
+        private String payoutMpesa;
+        private String payoutBankName;
+        private String payoutBankAccount;
+        private String payoutAccountName;
 
         public int getPriceOnline() { return priceOnline; }
         public String getTitle() { return title; }
@@ -90,6 +95,11 @@ public class TherapistDto {
         public Boolean getAvailable() { return available; }
         public List<Integer> getAvailableDays() { return availableDays; }
         public List<String> getAvailableSlots() { return availableSlots; }
+        public String getPayoutMethod() { return payoutMethod; }
+        public String getPayoutMpesa() { return payoutMpesa; }
+        public String getPayoutBankName() { return payoutBankName; }
+        public String getPayoutBankAccount() { return payoutBankAccount; }
+        public String getPayoutAccountName() { return payoutAccountName; }
         public void setPriceOnline(int priceOnline) { this.priceOnline = priceOnline; }
         public void setTitle(String title) { this.title = title; }
         public void setSpecialties(String specialties) { this.specialties = specialties; }
@@ -97,6 +107,11 @@ public class TherapistDto {
         public void setAvailable(Boolean available) { this.available = available; }
         public void setAvailableDays(List<Integer> availableDays) { this.availableDays = availableDays; }
         public void setAvailableSlots(List<String> availableSlots) { this.availableSlots = availableSlots; }
+        public void setPayoutMethod(String payoutMethod) { this.payoutMethod = payoutMethod; }
+        public void setPayoutMpesa(String payoutMpesa) { this.payoutMpesa = payoutMpesa; }
+        public void setPayoutBankName(String payoutBankName) { this.payoutBankName = payoutBankName; }
+        public void setPayoutBankAccount(String payoutBankAccount) { this.payoutBankAccount = payoutBankAccount; }
+        public void setPayoutAccountName(String payoutAccountName) { this.payoutAccountName = payoutAccountName; }
     }
 
     /** Public directory view of a therapist. */
@@ -117,5 +132,11 @@ public class TherapistDto {
         public String email;
         public List<Integer> availableDays;
         public List<String> availableSlots;
+        // Populated only for the therapist's own profile view (never in the public directory).
+        public String payoutMethod;
+        public String payoutMpesa;
+        public String payoutBankName;
+        public String payoutBankAccount;
+        public String payoutAccountName;
     }
 }

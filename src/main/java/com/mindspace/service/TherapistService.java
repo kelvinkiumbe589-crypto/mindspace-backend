@@ -3,6 +3,7 @@ package com.mindspace.service;
 import com.mindspace.dto.TherapistDto;
 import com.mindspace.model.TherapistProfile;
 import com.mindspace.model.User;
+import com.mindspace.repository.BookingRepository;
 import com.mindspace.repository.TherapistProfileRepository;
 import com.mindspace.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -21,13 +23,50 @@ public class TherapistService {
 
     private final TherapistProfileRepository profileRepo;
     private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
     private final PasswordEncoder passwordEncoder;
 
     public TherapistService(TherapistProfileRepository profileRepo, UserRepository userRepository,
-                            PasswordEncoder passwordEncoder) {
+                            BookingRepository bookingRepository, PasswordEncoder passwordEncoder) {
         this.profileRepo = profileRepo;
         this.userRepository = userRepository;
+        this.bookingRepository = bookingRepository;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    public TherapistDto.Response update(UUID profileId, TherapistDto.UpdateRequest req) {
+        TherapistProfile p = profileRepo.findById(profileId)
+                .orElseThrow(() -> new IllegalArgumentException("Therapist not found"));
+        User u = p.getUser();
+
+        p.setName(req.getName());
+        p.setInitials(initials(req.getName()));
+        p.setTitle(req.getTitle());
+        p.setSpecialties(req.getSpecialties());
+        if (req.getPriceOnline() > 0) p.setPriceOnline(req.getPriceOnline());
+        p.setBio(req.getBio());
+        if (req.getAvailable() != null) p.setAvailable(req.getAvailable());
+
+        if (req.getEmail() != null && !req.getEmail().isBlank() && !req.getEmail().equalsIgnoreCase(u.getEmail())) {
+            if (userRepository.existsByEmail(req.getEmail())) {
+                throw new IllegalArgumentException("Email is already in use");
+            }
+            u.setEmail(req.getEmail());
+        }
+        if (req.getPassword() != null && !req.getPassword().isBlank()) {
+            u.setPasswordHash(passwordEncoder.encode(req.getPassword()));
+        }
+        userRepository.save(u);
+        return toResponse(profileRepo.save(p));
+    }
+
+    public void delete(UUID profileId) {
+        TherapistProfile p = profileRepo.findById(profileId)
+                .orElseThrow(() -> new IllegalArgumentException("Therapist not found"));
+        User u = p.getUser();
+        bookingRepository.deleteByTherapist(u); // remove their session records too
+        profileRepo.delete(p);
+        userRepository.delete(u);
     }
 
     public TherapistDto.Response create(TherapistDto.CreateRequest req) {

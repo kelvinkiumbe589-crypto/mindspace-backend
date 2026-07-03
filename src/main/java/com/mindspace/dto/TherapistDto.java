@@ -42,6 +42,37 @@ public class TherapistDto {
         public void setBio(String bio) { this.bio = bio; }
     }
 
+    /** Admin edits a therapist. Password/email optional (only changed if provided). */
+    public static class UpdateRequest {
+        @NotBlank(message = "Name is required")
+        private String name;
+
+        private String email;      // optional — change login email
+        private String password;   // optional — reset password
+        private String title;
+        private String specialties;
+        private int priceOnline;
+        private String bio;
+        private Boolean available;
+
+        public String getName() { return name; }
+        public String getEmail() { return email; }
+        public String getPassword() { return password; }
+        public String getTitle() { return title; }
+        public String getSpecialties() { return specialties; }
+        public int getPriceOnline() { return priceOnline; }
+        public String getBio() { return bio; }
+        public Boolean getAvailable() { return available; }
+        public void setName(String name) { this.name = name; }
+        public void setEmail(String email) { this.email = email; }
+        public void setPassword(String password) { this.password = password; }
+        public void setTitle(String title) { this.title = title; }
+        public void setSpecialties(String specialties) { this.specialties = specialties; }
+        public void setPriceOnline(int priceOnline) { this.priceOnline = priceOnline; }
+        public void setBio(String bio) { this.bio = bio; }
+        public void setAvailable(Boolean available) { this.available = available; }
+    }
+
     /** Public directory view of a therapist. */
     public static class Response {
         public String id;          // profile id

@@ -1,7 +1,9 @@
 package com.mindspace.controller;
 
 import com.mindspace.dto.TherapistDto;
+import com.mindspace.model.Booking;
 import com.mindspace.model.User;
+import com.mindspace.repository.BookingRepository;
 import com.mindspace.repository.MoodEntryRepository;
 import com.mindspace.repository.SupportMessageRepository;
 import com.mindspace.repository.UserRepository;
@@ -16,6 +18,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -26,14 +29,16 @@ public class AdminController {
     private final MoodEntryRepository moodEntryRepository;
     private final SupportMessageRepository supportMessageRepository;
     private final TherapistService therapistService;
+    private final BookingRepository bookingRepository;
 
     public AdminController(UserRepository userRepository, MoodEntryRepository moodEntryRepository,
                            SupportMessageRepository supportMessageRepository,
-                           TherapistService therapistService) {
+                           TherapistService therapistService, BookingRepository bookingRepository) {
         this.userRepository = userRepository;
         this.moodEntryRepository = moodEntryRepository;
         this.supportMessageRepository = supportMessageRepository;
         this.therapistService = therapistService;
+        this.bookingRepository = bookingRepository;
     }
 
     // ── Therapist management ──
@@ -47,6 +52,18 @@ public class AdminController {
         return therapistService.create(req);
     }
 
+    @PutMapping("/therapists/{id}")
+    public TherapistDto.Response updateTherapist(@PathVariable UUID id,
+                                                 @Valid @RequestBody TherapistDto.UpdateRequest req) {
+        return therapistService.update(id, req);
+    }
+
+    @DeleteMapping("/therapists/{id}")
+    public Map<String, Object> deleteTherapist(@PathVariable UUID id) {
+        therapistService.delete(id);
+        return Map.of("deleted", true);
+    }
+
     @GetMapping("/stats")
     public Map<String, Object> stats() {
         LocalDateTime now = LocalDateTime.now();
@@ -57,6 +74,16 @@ public class AdminController {
         long totalMoods = moodEntryRepository.count();
         long conversations = supportMessageRepository.findAll().stream()
                 .map(m -> m.getUser().getId()).distinct().count();
+
+        // Paid transactions = bookings that got past payment
+        List<Booking> bookings = bookingRepository.findAll();
+        long transactions = bookings.stream()
+                .filter(b -> b.getStatus() != Booking.Status.PENDING_PAYMENT && b.getStatus() != Booking.Status.FAILED)
+                .count();
+        long revenue = bookings.stream()
+                .filter(b -> b.getStatus() != Booking.Status.PENDING_PAYMENT && b.getStatus() != Booking.Status.FAILED)
+                .mapToLong(Booking::getAmount).sum();
+        long completedSessions = bookings.stream().filter(b -> b.getStatus() == Booking.Status.DONE).count();
 
         // Signups per day for the last 7 days
         List<User> users = userRepository.findAll();
@@ -81,6 +108,9 @@ public class AdminController {
         out.put("newUsers30d", newUsers30d);
         out.put("totalMoods", totalMoods);
         out.put("conversations", conversations);
+        out.put("transactions", transactions);
+        out.put("revenue", revenue);
+        out.put("completedSessions", completedSessions);
         out.put("signupsByDay", signupsByDay);
         return out;
     }

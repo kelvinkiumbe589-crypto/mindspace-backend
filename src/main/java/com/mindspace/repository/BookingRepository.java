@@ -12,4 +12,5 @@ import java.util.UUID;
 public interface BookingRepository extends JpaRepository<Booking, UUID> {
     List<Booking> findByClientOrderByCreatedAtDesc(User client);
     List<Booking> findByTherapistOrderByScheduledAtAsc(User therapist);
+    void deleteByTherapist(User therapist);
 }

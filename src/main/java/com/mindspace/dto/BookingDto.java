@@ -28,6 +28,12 @@ public class BookingDto {
         public void setOrderTrackingId(String orderTrackingId) { this.orderTrackingId = orderTrackingId; }
     }
 
+    public static class RateRequest {
+        private int rating; // 1-5
+        public int getRating() { return rating; }
+        public void setRating(int rating) { this.rating = rating; }
+    }
+
     public static class Response {
         public String id;
         public String therapistId;
@@ -39,5 +45,6 @@ public class BookingDto {
         public String scheduledAt;
         public String status;
         public String createdAt;
+        public Integer rating;
     }
 }

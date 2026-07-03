@@ -79,6 +79,40 @@ public class BookingService {
         return bookingRepo.findByClientOrderByCreatedAtDesc(user(clientEmail)).stream().map(this::toResponse).toList();
     }
 
+    /** Client removes an incomplete booking (payment never completed). */
+    public void delete(String clientEmail, UUID bookingId) {
+        Booking b = ownedByClient(bookingId, clientEmail);
+        if (b.getStatus() != Booking.Status.PENDING_PAYMENT && b.getStatus() != Booking.Status.FAILED) {
+            throw new IllegalArgumentException("Only incomplete bookings can be removed");
+        }
+        bookingRepo.delete(b);
+    }
+
+    /** Client rates a completed session; the therapist's average rating is recomputed. */
+    public BookingDto.Response rate(String clientEmail, UUID bookingId, int rating) {
+        if (rating < 1 || rating > 5) throw new IllegalArgumentException("Rating must be between 1 and 5");
+        Booking b = ownedByClient(bookingId, clientEmail);
+        if (b.getStatus() != Booking.Status.DONE) {
+            throw new IllegalArgumentException("You can only rate completed sessions");
+        }
+        b.setRating(rating);
+        bookingRepo.save(b);
+        recomputeRating(b.getTherapist());
+        return toResponse(b);
+    }
+
+    private void recomputeRating(User therapist) {
+        java.util.List<Booking> rated = bookingRepo.findByTherapistOrderByScheduledAtAsc(therapist).stream()
+                .filter(x -> x.getRating() != null).toList();
+        if (rated.isEmpty()) return;
+        double avg = rated.stream().mapToInt(Booking::getRating).average().orElse(5.0);
+        profileRepo.findByUserId(therapist.getId()).ifPresent(p -> {
+            p.setRating(Math.round(avg * 10) / 10.0);
+            p.setReviews(rated.size());
+            profileRepo.save(p);
+        });
+    }
+
     // ── Therapist ──
 
     public java.util.List<BookingDto.Response> therapistBookings(String therapistEmail) {
@@ -143,6 +177,7 @@ public class BookingService {
         r.scheduledAt = b.getScheduledAt() == null ? null : b.getScheduledAt().toString();
         r.status = b.getStatus().name();
         r.createdAt = b.getCreatedAt() == null ? null : b.getCreatedAt().toString();
+        r.rating = b.getRating();
         return r;
     }
 }

@@ -43,6 +43,9 @@ public class Booking {
     @Column(name = "order_tracking_id", length = 100)
     private String orderTrackingId;
 
+    @Column
+    private Integer rating; // 1-5, set by the client after the session is DONE
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -59,6 +62,7 @@ public class Booking {
     public LocalDateTime getScheduledAt() { return scheduledAt; }
     public Status getStatus() { return status; }
     public String getOrderTrackingId() { return orderTrackingId; }
+    public Integer getRating() { return rating; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
     public void setClient(User client) { this.client = client; }
@@ -68,4 +72,5 @@ public class Booking {
     public void setScheduledAt(LocalDateTime scheduledAt) { this.scheduledAt = scheduledAt; }
     public void setStatus(Status status) { this.status = status; }
     public void setOrderTrackingId(String orderTrackingId) { this.orderTrackingId = orderTrackingId; }
+    public void setRating(Integer rating) { this.rating = rating; }
 }

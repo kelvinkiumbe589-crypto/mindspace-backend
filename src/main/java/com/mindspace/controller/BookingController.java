@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /** Client-side booking endpoints (authenticated user). */
@@ -43,5 +44,17 @@ public class BookingController {
     @PostMapping("/{id}/failed")
     public BookingDto.Response failed(@AuthenticationPrincipal UserDetails user, @PathVariable UUID id) {
         return bookingService.markFailed(user.getUsername(), id);
+    }
+
+    @DeleteMapping("/{id}")
+    public Map<String, Object> delete(@AuthenticationPrincipal UserDetails user, @PathVariable UUID id) {
+        bookingService.delete(user.getUsername(), id);
+        return Map.of("deleted", true);
+    }
+
+    @PostMapping("/{id}/rate")
+    public BookingDto.Response rate(@AuthenticationPrincipal UserDetails user, @PathVariable UUID id,
+                                    @RequestBody BookingDto.RateRequest req) {
+        return bookingService.rate(user.getUsername(), id, req.getRating());
     }
 }

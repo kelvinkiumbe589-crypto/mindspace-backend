@@ -49,6 +49,13 @@ public class TherapistProfile {
     @Column(nullable = false)
     private int reviews = 0;
 
+    // Availability the therapist sets themselves.
+    @Column(name = "available_days", length = 40)
+    private String availableDays = "1,2,3,4,5"; // 0=Sun..6=Sat
+
+    @Column(name = "available_slots", length = 255)
+    private String availableSlots = "09:00,10:00,11:00,14:00,15:00,16:00";
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -67,6 +74,8 @@ public class TherapistProfile {
     public boolean isAvailable() { return available; }
     public double getRating() { return rating; }
     public int getReviews() { return reviews; }
+    public String getAvailableDays() { return availableDays; }
+    public String getAvailableSlots() { return availableSlots; }
 
     public void setUser(User user) { this.user = user; }
     public void setName(String name) { this.name = name; }
@@ -79,4 +88,6 @@ public class TherapistProfile {
     public void setAvailable(boolean available) { this.available = available; }
     public void setRating(double rating) { this.rating = rating; }
     public void setReviews(int reviews) { this.reviews = reviews; }
+    public void setAvailableDays(String availableDays) { this.availableDays = availableDays; }
+    public void setAvailableSlots(String availableSlots) { this.availableSlots = availableSlots; }
 }

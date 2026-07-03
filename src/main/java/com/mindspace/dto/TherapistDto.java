@@ -73,6 +73,32 @@ public class TherapistDto {
         public void setAvailable(Boolean available) { this.available = available; }
     }
 
+    /** A therapist updates their OWN profile (price + availability). */
+    public static class SelfUpdateRequest {
+        private int priceOnline;
+        private String title;
+        private String specialties;
+        private String bio;
+        private Boolean available;
+        private List<Integer> availableDays;  // 0=Sun..6=Sat
+        private List<String> availableSlots;  // "HH:MM"
+
+        public int getPriceOnline() { return priceOnline; }
+        public String getTitle() { return title; }
+        public String getSpecialties() { return specialties; }
+        public String getBio() { return bio; }
+        public Boolean getAvailable() { return available; }
+        public List<Integer> getAvailableDays() { return availableDays; }
+        public List<String> getAvailableSlots() { return availableSlots; }
+        public void setPriceOnline(int priceOnline) { this.priceOnline = priceOnline; }
+        public void setTitle(String title) { this.title = title; }
+        public void setSpecialties(String specialties) { this.specialties = specialties; }
+        public void setBio(String bio) { this.bio = bio; }
+        public void setAvailable(Boolean available) { this.available = available; }
+        public void setAvailableDays(List<Integer> availableDays) { this.availableDays = availableDays; }
+        public void setAvailableSlots(List<String> availableSlots) { this.availableSlots = availableSlots; }
+    }
+
     /** Public directory view of a therapist. */
     public static class Response {
         public String id;          // profile id
@@ -89,5 +115,7 @@ public class TherapistDto {
         public double rating;
         public int reviews;
         public String email;
+        public List<Integer> availableDays;
+        public List<String> availableSlots;
     }
 }

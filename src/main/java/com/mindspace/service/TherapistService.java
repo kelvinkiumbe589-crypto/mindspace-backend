@@ -118,7 +118,47 @@ public class TherapistService {
         r.rating = p.getRating();
         r.reviews = p.getReviews();
         r.email = p.getUser().getEmail();
+        r.availableDays = parseInts(p.getAvailableDays());
+        r.availableSlots = parseStrs(p.getAvailableSlots());
         return r;
+    }
+
+    // ── Therapist self-service ──
+    public TherapistDto.Response getOwnProfile(String email) {
+        return toResponse(ownProfile(email));
+    }
+
+    public TherapistDto.Response updateOwnProfile(String email, TherapistDto.SelfUpdateRequest req) {
+        TherapistProfile p = ownProfile(email);
+        if (req.getPriceOnline() > 0) p.setPriceOnline(req.getPriceOnline());
+        if (req.getTitle() != null) p.setTitle(req.getTitle());
+        if (req.getSpecialties() != null) p.setSpecialties(req.getSpecialties());
+        if (req.getBio() != null) p.setBio(req.getBio());
+        if (req.getAvailable() != null) p.setAvailable(req.getAvailable());
+        if (req.getAvailableDays() != null) {
+            p.setAvailableDays(req.getAvailableDays().stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(",")));
+        }
+        if (req.getAvailableSlots() != null) {
+            p.setAvailableSlots(String.join(",", req.getAvailableSlots()));
+        }
+        return toResponse(profileRepo.save(p));
+    }
+
+    private TherapistProfile ownProfile(String email) {
+        User u = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        return profileRepo.findByUserId(u.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Therapist profile not found"));
+    }
+
+    private List<Integer> parseInts(String csv) {
+        if (csv == null || csv.isBlank()) return List.of();
+        return Arrays.stream(csv.split(",")).map(String::trim).filter(s -> !s.isEmpty()).map(Integer::parseInt).toList();
+    }
+
+    private List<String> parseStrs(String csv) {
+        if (csv == null || csv.isBlank()) return List.of();
+        return Arrays.stream(csv.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
     }
 
     private String initials(String name) {

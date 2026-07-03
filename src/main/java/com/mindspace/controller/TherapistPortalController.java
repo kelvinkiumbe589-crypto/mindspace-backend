@@ -1,7 +1,10 @@
 package com.mindspace.controller;
 
 import com.mindspace.dto.BookingDto;
+import com.mindspace.dto.TherapistDto;
 import com.mindspace.service.BookingService;
+import com.mindspace.service.TherapistService;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,9 +20,23 @@ import java.util.UUID;
 public class TherapistPortalController {
 
     private final BookingService bookingService;
+    private final TherapistService therapistService;
 
-    public TherapistPortalController(BookingService bookingService) {
+    public TherapistPortalController(BookingService bookingService, TherapistService therapistService) {
         this.bookingService = bookingService;
+        this.therapistService = therapistService;
+    }
+
+    // ── Own profile: price + availability ──
+    @GetMapping("/profile")
+    public TherapistDto.Response getProfile(@AuthenticationPrincipal UserDetails therapist) {
+        return therapistService.getOwnProfile(therapist.getUsername());
+    }
+
+    @PutMapping("/profile")
+    public TherapistDto.Response updateProfile(@AuthenticationPrincipal UserDetails therapist,
+                                               @Valid @RequestBody TherapistDto.SelfUpdateRequest req) {
+        return therapistService.updateOwnProfile(therapist.getUsername(), req);
     }
 
     @GetMapping("/bookings")

@@ -26,6 +26,9 @@ public class SecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
     public SecurityConfig(JwtFilter jwtFilter, UserDetailsServiceImpl userDetailsService, OAuth2SuccessHandler oAuth2SuccessHandler) {
         this.jwtFilter = jwtFilter;
         this.userDetailsService = userDetailsService;
@@ -64,7 +67,7 @@ public class SecurityConfig {
                         new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/**")))
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2SuccessHandler)
-                        .failureUrl("http://localhost:5173/signin?error=true")
+                        .failureUrl(frontendUrl + "/signin?error=true")
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

@@ -5,6 +5,7 @@ import com.mindspace.repository.UserRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -24,6 +25,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     // Local encoder avoids a bean cycle (PasswordEncoder is defined in SecurityConfig,
     // which itself depends on this handler). The value is a throwaway — OAuth users log in via Google.
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    // The user-app URL to send the browser back to after Google login. Set in the cloud.
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
 
     public OAuth2SuccessHandler(JwtUtil jwtUtil, UserRepository userRepository) {
         this.jwtUtil = jwtUtil;
@@ -53,7 +58,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             token = jwtUtil.generateToken(email);
         }
 
-        String redirectUrl = "http://localhost:5173/dashboard"
+        String redirectUrl = frontendUrl + "/dashboard"
                 + "?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8)
                 + "&name=" + URLEncoder.encode(name != null ? name : "", StandardCharsets.UTF_8)
                 + "&email=" + URLEncoder.encode(email != null ? email : "", StandardCharsets.UTF_8);

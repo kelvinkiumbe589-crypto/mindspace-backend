@@ -1,11 +1,21 @@
-# Deploying MindSpace to AWS
+# Deploying MindSpace
 
-Architecture:
-- **Backend** (Spring Boot) → **AWS App Runner** (Docker) — this repo
+The env-var names below are the same on any host. Two options:
+
+## Option A — 100% FREE (recommended for launch/testing)
+- **Database** → **Neon** (free serverless Postgres, no time limit)
+- **Backend** → **Render** free web service (deploys this Dockerfile; sleeps after
+  15 min idle, ~30–60s cold start on the next request)
+- **3 frontends** → **Vercel** free (one project per repo)
+
+Total cost: **$0**. Tradeoff: the backend cold-starts after inactivity.
+
+## Option B — AWS (not free: App Runner ~$5+/mo, RDS free only 12 months)
+- **Backend** → **AWS App Runner** (Docker)
 - **Database** → **Amazon RDS for PostgreSQL**
-- **3 frontends** (Vite) → **AWS Amplify Hosting** (one app per repo)
+- **3 frontends** → **AWS Amplify Hosting**
 
-Deploy order: **RDS → App Runner → Amplify** (frontends need the backend URL).
+Deploy order (both options): **DB → backend → frontends** (frontends need the backend URL).
 
 ---
 
@@ -45,6 +55,9 @@ SPRING_DATASOURCE_PASSWORD=<rds password>
 APP_JWT_SECRET=<a long random 48+ char string>
 APP_JWT_EXPIRATION=86400000
 APP_ADMIN_EMAILS=kelvinkiumbe589@gmail.com
+
+# User-app URL (Google login redirects back here)
+APP_FRONTEND_URL=<USER_APP_URL>
 
 # CORS — your deployed frontend URLs (comma-separated, no trailing slash)
 APP_CORS_ORIGINS=https://user.example.com,https://admin.example.com,https://therapist.example.com

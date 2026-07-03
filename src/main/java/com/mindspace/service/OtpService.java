@@ -85,7 +85,10 @@ public class OtpService {
     }
 
     private void sendCode(String email, String code, EmailOtp.Purpose purpose) {
-        String action = purpose == EmailOtp.Purpose.REGISTER ? "create your MindSpace account" : "sign in to MindSpace";
+        String action;
+        if (purpose == EmailOtp.Purpose.REGISTER) action = "create your MindSpace account";
+        else if (purpose == EmailOtp.Purpose.RESET) action = "reset your MindSpace password";
+        else action = "sign in to MindSpace";
         if (mailSender == null || fromAddress == null || fromAddress.isBlank()) {
             // Dev fallback: no SMTP configured — log so testing can continue.
             log.warn("Mail not configured — verification code for {} ({}): {}", email, purpose, code);

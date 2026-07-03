@@ -48,7 +48,7 @@ public class EmailOtp {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    public enum Purpose { REGISTER, LOGIN }
+    public enum Purpose { REGISTER, LOGIN, RESET }
 
     public EmailOtp() {}
 

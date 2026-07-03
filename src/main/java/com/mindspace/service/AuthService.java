@@ -131,6 +131,24 @@ public class AuthService {
         return response;
     }
 
+    // Step 1 of reset: email a code (only if the account exists — but don't reveal that).
+    public AuthDto.PendingResponse forgotPassword(AuthDto.ForgotPasswordRequest request) {
+        userRepository.findByEmail(request.getEmail())
+                .ifPresent(u -> otpService.issue(request.getEmail(), EmailOtp.Purpose.RESET, null, null));
+        return new AuthDto.PendingResponse(request.getEmail(),
+                "If an account exists for " + request.getEmail() + ", we've sent a 6-digit reset code.");
+    }
+
+    // Step 2 of reset: confirm the code, set the new password, and sign the user in.
+    public AuthDto.AuthResponse resetPassword(AuthDto.ResetPasswordRequest request) {
+        otpService.verify(request.getEmail(), EmailOtp.Purpose.RESET, request.getCode());
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        return issueToken(user);
+    }
+
     public AuthDto.PendingResponse resend(AuthDto.ResendRequest request) {
         otpService.resend(request.getEmail(), parsePurpose(request.getPurpose()));
         return new AuthDto.PendingResponse(request.getEmail(),

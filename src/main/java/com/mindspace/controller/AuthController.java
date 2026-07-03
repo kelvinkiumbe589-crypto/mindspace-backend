@@ -42,4 +42,17 @@ public class AuthController {
             @Valid @RequestBody AuthDto.ResendRequest request) {
         return ResponseEntity.ok(authService.resend(request));
     }
+
+    // Password reset: email a code, then set a new password with it.
+    @PostMapping("/forgot-password")
+    public ResponseEntity<AuthDto.PendingResponse> forgotPassword(
+            @Valid @RequestBody AuthDto.ForgotPasswordRequest request) {
+        return ResponseEntity.ok(authService.forgotPassword(request));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<AuthDto.AuthResponse> resetPassword(
+            @Valid @RequestBody AuthDto.ResetPasswordRequest request) {
+        return ResponseEntity.ok(authService.resetPassword(request));
+    }
 }

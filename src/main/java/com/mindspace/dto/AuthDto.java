@@ -83,6 +83,34 @@ public class AuthDto {
         public void setPurpose(String purpose) { this.purpose = purpose; }
     }
 
+    public static class ForgotPasswordRequest {
+        @Email(message = "Invalid email address")
+        @NotBlank(message = "Email is required")
+        private String email;
+
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
+
+    public static class ResetPasswordRequest {
+        @NotBlank(message = "Email is required")
+        private String email;
+
+        @NotBlank(message = "Verification code is required")
+        private String code;
+
+        @NotBlank(message = "New password is required")
+        @Size(min = 6, message = "Password must be at least 6 characters")
+        private String newPassword;
+
+        public String getEmail() { return email; }
+        public String getCode() { return code; }
+        public String getNewPassword() { return newPassword; }
+        public void setEmail(String email) { this.email = email; }
+        public void setCode(String code) { this.code = code; }
+        public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
+    }
+
     /** Returned by register/login when an email code has been sent and must be verified. */
     public static class PendingResponse {
         private final boolean otpRequired = true;

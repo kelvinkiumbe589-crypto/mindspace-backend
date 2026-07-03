@@ -41,6 +41,28 @@ public class AdminController {
         this.bookingRepository = bookingRepository;
     }
 
+    // ── Users ──
+    @GetMapping("/users")
+    public List<Map<String, Object>> users() {
+        List<User> users = new ArrayList<>(userRepository.findAll());
+        users.sort((a, b) -> {
+            if (a.getCreatedAt() == null) return 1;
+            if (b.getCreatedAt() == null) return -1;
+            return b.getCreatedAt().compareTo(a.getCreatedAt()); // newest first
+        });
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (User u : users) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", u.getId().toString());
+            m.put("username", u.getUsername());
+            m.put("email", u.getEmail());
+            m.put("role", u.getRole().name());
+            m.put("createdAt", u.getCreatedAt() == null ? null : u.getCreatedAt().toString());
+            out.add(m);
+        }
+        return out;
+    }
+
     // ── Therapist management ──
     @GetMapping("/therapists")
     public List<TherapistDto.Response> listTherapists() {

@@ -88,9 +88,15 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Staff (admin/therapist) sign in with just a password — no email OTP.
+        if (user.getRole() == User.Role.ADMIN || user.getRole() == User.Role.THERAPIST) {
+            return issueToken(user);
+        }
+
         if (jwtUtil.isTrustedDevice(request.getDeviceToken(), request.getEmail())) {
-            User user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
             return issueToken(user);
         }
 

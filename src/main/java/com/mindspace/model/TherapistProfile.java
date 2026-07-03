@@ -1,0 +1,82 @@
+package com.mindspace.model;
+
+import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+/** Directory + booking profile for a therapist. Backed by a User (role THERAPIST) for login. */
+@Entity
+@Table(name = "therapist_profiles")
+public class TherapistProfile {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
+
+    @Column(nullable = false, length = 100)
+    private String name;
+
+    @Column(length = 120)
+    private String title;
+
+    @Column(length = 255)
+    private String specialties; // comma-separated
+
+    @Column(name = "price_online", nullable = false)
+    private int priceOnline = 2000; // KES
+
+    @Column(length = 8)
+    private String initials;
+
+    @Column(length = 16)
+    private String color = "#534AB7";
+
+    @Column(length = 500)
+    private String bio;
+
+    @Column(nullable = false)
+    private boolean available = true;
+
+    @Column(nullable = false)
+    private double rating = 5.0;
+
+    @Column(nullable = false)
+    private int reviews = 0;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    public TherapistProfile() {}
+
+    public UUID getId() { return id; }
+    public User getUser() { return user; }
+    public String getName() { return name; }
+    public String getTitle() { return title; }
+    public String getSpecialties() { return specialties; }
+    public int getPriceOnline() { return priceOnline; }
+    public String getInitials() { return initials; }
+    public String getColor() { return color; }
+    public String getBio() { return bio; }
+    public boolean isAvailable() { return available; }
+    public double getRating() { return rating; }
+    public int getReviews() { return reviews; }
+
+    public void setUser(User user) { this.user = user; }
+    public void setName(String name) { this.name = name; }
+    public void setTitle(String title) { this.title = title; }
+    public void setSpecialties(String specialties) { this.specialties = specialties; }
+    public void setPriceOnline(int priceOnline) { this.priceOnline = priceOnline; }
+    public void setInitials(String initials) { this.initials = initials; }
+    public void setColor(String color) { this.color = color; }
+    public void setBio(String bio) { this.bio = bio; }
+    public void setAvailable(boolean available) { this.available = available; }
+    public void setRating(double rating) { this.rating = rating; }
+    public void setReviews(int reviews) { this.reviews = reviews; }
+}

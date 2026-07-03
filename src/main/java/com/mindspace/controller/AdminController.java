@@ -1,13 +1,14 @@
 package com.mindspace.controller;
 
+import com.mindspace.dto.TherapistDto;
 import com.mindspace.model.User;
 import com.mindspace.repository.MoodEntryRepository;
 import com.mindspace.repository.SupportMessageRepository;
 import com.mindspace.repository.UserRepository;
+import com.mindspace.service.TherapistService;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,12 +25,26 @@ public class AdminController {
     private final UserRepository userRepository;
     private final MoodEntryRepository moodEntryRepository;
     private final SupportMessageRepository supportMessageRepository;
+    private final TherapistService therapistService;
 
     public AdminController(UserRepository userRepository, MoodEntryRepository moodEntryRepository,
-                           SupportMessageRepository supportMessageRepository) {
+                           SupportMessageRepository supportMessageRepository,
+                           TherapistService therapistService) {
         this.userRepository = userRepository;
         this.moodEntryRepository = moodEntryRepository;
         this.supportMessageRepository = supportMessageRepository;
+        this.therapistService = therapistService;
+    }
+
+    // ── Therapist management ──
+    @GetMapping("/therapists")
+    public List<TherapistDto.Response> listTherapists() {
+        return therapistService.list();
+    }
+
+    @PostMapping("/therapists")
+    public TherapistDto.Response createTherapist(@Valid @RequestBody TherapistDto.CreateRequest req) {
+        return therapistService.create(req);
     }
 
     @GetMapping("/stats")

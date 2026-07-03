@@ -2,8 +2,10 @@ package com.mindspace.controller;
 
 import com.mindspace.dto.BookingDto;
 import com.mindspace.dto.TherapistDto;
+import com.mindspace.dto.WalletDto;
 import com.mindspace.service.BookingService;
 import com.mindspace.service.TherapistService;
+import com.mindspace.service.WalletService;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,10 +23,30 @@ public class TherapistPortalController {
 
     private final BookingService bookingService;
     private final TherapistService therapistService;
+    private final WalletService walletService;
 
-    public TherapistPortalController(BookingService bookingService, TherapistService therapistService) {
+    public TherapistPortalController(BookingService bookingService, TherapistService therapistService,
+                                     WalletService walletService) {
         this.bookingService = bookingService;
         this.therapistService = therapistService;
+        this.walletService = walletService;
+    }
+
+    // ── Earnings + withdrawals ──
+    @GetMapping("/earnings")
+    public WalletDto.Earnings earnings(@AuthenticationPrincipal UserDetails therapist) {
+        return walletService.earnings(therapist.getUsername());
+    }
+
+    @PostMapping("/withdrawals")
+    public WalletDto.WithdrawalResponse requestWithdrawal(@AuthenticationPrincipal UserDetails therapist,
+                                                          @RequestBody WalletDto.WithdrawalRequest req) {
+        return walletService.requestWithdrawal(therapist.getUsername(), req);
+    }
+
+    @GetMapping("/withdrawals")
+    public List<WalletDto.WithdrawalResponse> withdrawals(@AuthenticationPrincipal UserDetails therapist) {
+        return walletService.myWithdrawals(therapist.getUsername());
     }
 
     // ── Own profile: price + availability ──

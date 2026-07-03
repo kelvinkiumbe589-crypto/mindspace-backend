@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/ai/**").permitAll()
                         .requestMatchers("/api/contact").permitAll()
                         .requestMatchers("/api/payments/**").permitAll()
+                        .requestMatchers("/api/tips/**").permitAll()
                         .requestMatchers("/api/support/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/therapists/**").permitAll()

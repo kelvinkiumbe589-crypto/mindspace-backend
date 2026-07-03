@@ -1,6 +1,8 @@
 package com.mindspace.controller;
 
 import com.mindspace.dto.TherapistDto;
+import com.mindspace.dto.TipDto;
+import com.mindspace.dto.WalletDto;
 import com.mindspace.model.Booking;
 import com.mindspace.model.User;
 import com.mindspace.repository.BookingRepository;
@@ -8,6 +10,8 @@ import com.mindspace.repository.MoodEntryRepository;
 import com.mindspace.repository.SupportMessageRepository;
 import com.mindspace.repository.UserRepository;
 import com.mindspace.service.TherapistService;
+import com.mindspace.service.TipService;
+import com.mindspace.service.WalletService;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -30,15 +34,42 @@ public class AdminController {
     private final SupportMessageRepository supportMessageRepository;
     private final TherapistService therapistService;
     private final BookingRepository bookingRepository;
+    private final WalletService walletService;
+    private final TipService tipService;
 
     public AdminController(UserRepository userRepository, MoodEntryRepository moodEntryRepository,
                            SupportMessageRepository supportMessageRepository,
-                           TherapistService therapistService, BookingRepository bookingRepository) {
+                           TherapistService therapistService, BookingRepository bookingRepository,
+                           WalletService walletService, TipService tipService) {
         this.userRepository = userRepository;
         this.moodEntryRepository = moodEntryRepository;
         this.supportMessageRepository = supportMessageRepository;
         this.therapistService = therapistService;
         this.bookingRepository = bookingRepository;
+        this.walletService = walletService;
+        this.tipService = tipService;
+    }
+
+    // ── Payouts (withdrawals) ──
+    @GetMapping("/withdrawals")
+    public List<WalletDto.WithdrawalResponse> withdrawals() {
+        return walletService.allWithdrawals();
+    }
+
+    @PostMapping("/withdrawals/{id}/paid")
+    public WalletDto.WithdrawalResponse markWithdrawalPaid(@PathVariable UUID id) {
+        return walletService.markPaid(id);
+    }
+
+    @PostMapping("/withdrawals/{id}/reject")
+    public WalletDto.WithdrawalResponse rejectWithdrawal(@PathVariable UUID id) {
+        return walletService.reject(id);
+    }
+
+    // ── Tips ──
+    @GetMapping("/tips")
+    public List<TipDto.Response> tips() {
+        return tipService.list();
     }
 
     // ── Users ──
@@ -133,6 +164,8 @@ public class AdminController {
         out.put("transactions", transactions);
         out.put("revenue", revenue);
         out.put("completedSessions", completedSessions);
+        out.put("tips", tipService.countPaid());
+        out.put("tipsTotal", tipService.totalPaid());
         out.put("signupsByDay", signupsByDay);
         return out;
     }

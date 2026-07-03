@@ -6,6 +6,7 @@ import com.mindspace.model.User;
 import com.mindspace.repository.BookingRepository;
 import com.mindspace.repository.TherapistProfileRepository;
 import com.mindspace.repository.UserRepository;
+import com.mindspace.repository.WithdrawalRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,13 +25,16 @@ public class TherapistService {
     private final TherapistProfileRepository profileRepo;
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
+    private final WithdrawalRepository withdrawalRepository;
     private final PasswordEncoder passwordEncoder;
 
     public TherapistService(TherapistProfileRepository profileRepo, UserRepository userRepository,
-                            BookingRepository bookingRepository, PasswordEncoder passwordEncoder) {
+                            BookingRepository bookingRepository, WithdrawalRepository withdrawalRepository,
+                            PasswordEncoder passwordEncoder) {
         this.profileRepo = profileRepo;
         this.userRepository = userRepository;
         this.bookingRepository = bookingRepository;
+        this.withdrawalRepository = withdrawalRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -64,7 +68,8 @@ public class TherapistService {
         TherapistProfile p = profileRepo.findById(profileId)
                 .orElseThrow(() -> new IllegalArgumentException("Therapist not found"));
         User u = p.getUser();
-        bookingRepository.deleteByTherapist(u); // remove their session records too
+        withdrawalRepository.deleteByTherapist(u); // remove payout records
+        bookingRepository.deleteByTherapist(u);    // remove their session records too
         profileRepo.delete(p);
         userRepository.delete(u);
     }

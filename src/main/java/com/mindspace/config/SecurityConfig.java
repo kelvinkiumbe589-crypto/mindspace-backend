@@ -57,6 +57,11 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+                // API clients get a clean 401 (not a 302 redirect to the OAuth login)
+                // so the SPA can detect an expired session and prompt re-login.
+                .exceptionHandling(ex -> ex.defaultAuthenticationEntryPointFor(
+                        (request, response, authEx) -> response.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"),
+                        new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/**")))
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2SuccessHandler)
                         .failureUrl("http://localhost:5173/signin?error=true")

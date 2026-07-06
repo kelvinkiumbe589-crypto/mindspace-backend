@@ -4,11 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -23,7 +25,7 @@ public class MailService {
     private static final Logger log = LoggerFactory.getLogger(MailService.class);
 
     private final JavaMailSender mailSender; // null when spring.mail.* isn't configured
-    private final RestClient rest = RestClient.create();
+    private final RestClient rest;
 
     @Value("${spring.mail.username:}")
     private String smtpFrom;
@@ -39,6 +41,11 @@ public class MailService {
 
     public MailService(ObjectProvider<JavaMailSender> mailSenderProvider) {
         this.mailSender = mailSenderProvider.getIfAvailable();
+        // Bounded timeouts so a slow/blocked mail provider can never hang a request thread.
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout((int) Duration.ofSeconds(8).toMillis());
+        factory.setReadTimeout((int) Duration.ofSeconds(12).toMillis());
+        this.rest = RestClient.builder().requestFactory(factory).build();
     }
 
     public boolean isConfigured() {

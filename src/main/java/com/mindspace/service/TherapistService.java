@@ -106,24 +106,32 @@ public class TherapistService {
         return toResponse(p);
     }
 
-    /** Best-effort email to a newly created therapist with their sign-in details. */
+    /**
+     * Best-effort email to a newly created therapist with their sign-in details.
+     * Runs on a background thread so email latency (or a blocked provider) never
+     * delays the account-creation response.
+     */
     private void sendWelcomeEmail(String name, String email, String password) {
-        try {
-            String where = portalUrl == null || portalUrl.isBlank()
-                    ? "the MindSpace therapist portal"
-                    : portalUrl;
-            String body =
-                    "Hi " + name + ",\n\n" +
-                    "A MindSpace therapist account has been created for you. You can now sign in to " + where + " with:\n\n" +
-                    "   Email:    " + email + "\n" +
-                    "   Password: " + password + "\n\n" +
-                    "Please sign in and change your password, then set your availability, session price and payout details in your profile.\n\n" +
-                    "Clients will only see you once you turn your availability on.\n\n" +
-                    "— MindSpace";
-            mailService.send(email, "Your MindSpace therapist account", body);
-        } catch (Exception ignored) {
-            // never let a mail failure block account creation
-        }
+        String where = portalUrl == null || portalUrl.isBlank()
+                ? "the MindSpace therapist portal"
+                : portalUrl;
+        String body =
+                "Hi " + name + ",\n\n" +
+                "A MindSpace therapist account has been created for you. You can now sign in to " + where + " with:\n\n" +
+                "   Email:    " + email + "\n" +
+                "   Password: " + password + "\n\n" +
+                "Please sign in and change your password, then set your availability, session price and payout details in your profile.\n\n" +
+                "Clients will only see you once you turn your availability on.\n\n" +
+                "— MindSpace";
+        Thread t = new Thread(() -> {
+            try {
+                mailService.send(email, "Your MindSpace therapist account", body);
+            } catch (Exception ignored) {
+                // never let a mail failure affect account creation
+            }
+        }, "therapist-welcome-email");
+        t.setDaemon(true);
+        t.start();
     }
 
     public List<TherapistDto.Response> list() {

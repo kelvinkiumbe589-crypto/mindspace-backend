@@ -134,9 +134,12 @@ public class TherapistService {
         t.start();
     }
 
+    /** Public list — only therapists who are currently available for booking. */
     public List<TherapistDto.Response> list() {
         List<TherapistDto.Response> out = new ArrayList<>();
-        for (TherapistProfile p : profileRepo.findAllByOrderByNameAsc()) out.add(toResponse(p, false));
+        for (TherapistProfile p : profileRepo.findAllByOrderByNameAsc()) {
+            if (p.isAvailable()) out.add(toResponse(p, false));
+        }
         return out;
     }
 

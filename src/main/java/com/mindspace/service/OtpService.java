@@ -4,10 +4,6 @@ import com.mindspace.model.EmailOtp;
 import com.mindspace.repository.EmailOtpRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,14 +24,11 @@ public class OtpService {
     private final SecureRandom random = new SecureRandom();
 
     private final EmailOtpRepository repo;
-    private final JavaMailSender mailSender; // null when spring.mail.* isn't configured
+    private final MailService mailService;
 
-    @Value("${spring.mail.username:}")
-    private String fromAddress;
-
-    public OtpService(EmailOtpRepository repo, ObjectProvider<JavaMailSender> mailSenderProvider) {
+    public OtpService(EmailOtpRepository repo, MailService mailService) {
         this.repo = repo;
-        this.mailSender = mailSenderProvider.getIfAvailable();
+        this.mailService = mailService;
     }
 
     /** Create (or replace) a code for this email+purpose and email it. */
@@ -89,22 +82,17 @@ public class OtpService {
         if (purpose == EmailOtp.Purpose.REGISTER) action = "create your MindSpace account";
         else if (purpose == EmailOtp.Purpose.RESET) action = "reset your MindSpace password";
         else action = "sign in to MindSpace";
-        if (mailSender == null || fromAddress == null || fromAddress.isBlank()) {
-            // Dev fallback: no SMTP configured — log so testing can continue.
-            log.warn("Mail not configured — verification code for {} ({}): {}", email, purpose, code);
-            return;
-        }
-        SimpleMailMessage mail = new SimpleMailMessage();
-        mail.setTo(email);
-        mail.setFrom(fromAddress);
-        mail.setSubject("Your MindSpace verification code: " + code);
-        mail.setText(
+        String subject = "Your MindSpace verification code: " + code;
+        String text =
                 "Hi,\n\n" +
                 "Use this code to " + action + ":\n\n" +
                 "        " + code + "\n\n" +
                 "The code expires in " + EXPIRY_MINUTES + " minutes. If you didn't request it, you can ignore this email.\n\n" +
-                "— MindSpace"
-        );
-        mailSender.send(mail);
+                "— MindSpace";
+        boolean sent = mailService.send(email, subject, text);
+        if (!sent) {
+            // Dev fallback: no provider configured — log so testing can continue.
+            log.warn("Mail not configured — verification code for {} ({}): {}", email, purpose, code);
+        }
     }
 }

@@ -106,6 +106,10 @@ public class AIInsightService {
             Map<String, Object> response = restClient.post()
                     .uri(url)
                     .header("Content-Type", "application/json")
+                    // Google's edge returns a 403 "robot" page to Java's default
+                    // User-Agent when the call comes from a server/data-center; a
+                    // normal UA avoids that block.
+                    .header("User-Agent", "Mozilla/5.0 (compatible; MindSpace/1.0)")
                     .body(requestBody)
                     .retrieve()
                     .body(Map.class);

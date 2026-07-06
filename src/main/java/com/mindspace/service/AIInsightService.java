@@ -21,6 +21,10 @@ public class AIInsightService {
     @Value("${app.gemini.api-key:}")
     private String geminiApiKey;
 
+    // Optional: when set, use Groq (works from cloud servers where Google blocks us).
+    @Value("${app.groq.api-key:}")
+    private String groqApiKey;
+
     public AIInsightService(MoodEntryRepository moodEntryRepository) {
         this.moodEntryRepository = moodEntryRepository;
         this.restClient = RestClient.create();
@@ -50,6 +54,14 @@ public class AIInsightService {
                     + "gently encourage them to seek professional help. Do not diagnose.\n\n"
                     + "Recent moods:\n" + context + "\n\nUser question: " + q;
         }
+        return generate(prompt);
+    }
+
+    /** Use Groq if configured (reliable from servers), otherwise Gemini. */
+    private String generate(String prompt) {
+        if (groqApiKey != null && !groqApiKey.isBlank()) {
+            return callGroq(prompt);
+        }
         return callGeminiAPI(prompt);
     }
 
@@ -58,7 +70,7 @@ public class AIInsightService {
                 .orElseThrow(() -> new IllegalArgumentException("Mood entry not found"));
 
         String prompt = buildPrompt(entry);
-        String insight = callGeminiAPI(prompt);
+        String insight = generate(prompt);
 
         entry.setAiInsight(insight);
         MoodEntry saved = moodEntryRepository.save(entry);
@@ -129,6 +141,39 @@ public class AIInsightService {
 
         } catch (Exception e) {
             System.out.println("Gemini API error: " + e.getMessage());
+            return "Thank you for logging your mood today. Remember to be kind to yourself.";
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String callGroq(String prompt) {
+        try {
+            Map<String, Object> requestBody = Map.of(
+                "model", "llama-3.3-70b-versatile",
+                "messages", List.of(Map.of("role", "user", "content", prompt))
+            );
+
+            Map<String, Object> response = restClient.post()
+                    .uri("https://api.groq.com/openai/v1/chat/completions")
+                    .header("Authorization", "Bearer " + groqApiKey)
+                    .header("Content-Type", "application/json")
+                    .body(requestBody)
+                    .retrieve()
+                    .body(Map.class);
+
+            if (response != null && response.containsKey("choices")) {
+                List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
+                if (!choices.isEmpty()) {
+                    Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+                    if (message != null && message.get("content") != null) {
+                        return (String) message.get("content");
+                    }
+                }
+            }
+            return "Thank you for sharing your feelings today. Keep going — every step forward matters.";
+
+        } catch (Exception e) {
+            System.out.println("Groq API error: " + e.getMessage());
             return "Thank you for logging your mood today. Remember to be kind to yourself.";
         }
     }

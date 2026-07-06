@@ -1,5 +1,6 @@
 package com.mindspace.controller;
 
+import com.mindspace.service.BookingService;
 import com.mindspace.service.MpesaService;
 import com.mindspace.service.PesapalService;
 import org.springframework.http.ResponseEntity;
@@ -21,10 +22,13 @@ public class PaymentController {
 
     private final MpesaService mpesaService;
     private final PesapalService pesapalService;
+    private final BookingService bookingService;
 
-    public PaymentController(MpesaService mpesaService, PesapalService pesapalService) {
+    public PaymentController(MpesaService mpesaService, PesapalService pesapalService,
+                            BookingService bookingService) {
         this.mpesaService = mpesaService;
         this.pesapalService = pesapalService;
+        this.bookingService = bookingService;
     }
 
     // ── Pesapal ──
@@ -62,6 +66,20 @@ public class PaymentController {
                                                           @RequestParam(required = false) String OrderNotificationType,
                                                           @RequestParam(required = false) String OrderMerchantReference) {
         System.out.println("Pesapal IPN: tracking=" + OrderTrackingId + " type=" + OrderNotificationType + " ref=" + OrderMerchantReference);
+        // Verify the real status with Pesapal (never trust the bare notification),
+        // then confirm the matching booking server-side. This closes the "paid but
+        // the browser was closed before confirming" gap. Failures must not stop the ack.
+        try {
+            if (OrderTrackingId != null && !OrderTrackingId.isBlank()) {
+                Map<String, Object> status = pesapalService.getStatus(OrderTrackingId);
+                String desc = String.valueOf(status.get("paymentStatus"));
+                if ("Completed".equalsIgnoreCase(desc)) {
+                    bookingService.confirmPaidByTrackingId(OrderTrackingId);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Pesapal IPN reconciliation failed: " + e.getMessage());
+        }
         Map<String, Object> ack = Map.of(
                 "orderNotificationType", OrderNotificationType == null ? "" : OrderNotificationType,
                 "orderTrackingId", OrderTrackingId == null ? "" : OrderTrackingId,

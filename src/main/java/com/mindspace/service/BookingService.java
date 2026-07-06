@@ -69,6 +69,33 @@ public class BookingService {
         return toResponse(bookingRepo.save(b));
     }
 
+    /**
+     * Record the Pesapal tracking id on the booking as soon as checkout starts,
+     * BEFORE the user pays. This lets the server-side IPN correlate the payment
+     * back to this booking even if the client's browser is closed mid-payment.
+     * Status stays PENDING_PAYMENT until the payment is confirmed.
+     */
+    public BookingDto.Response attachOrder(String clientEmail, UUID bookingId, String orderTrackingId) {
+        Booking b = ownedByClient(bookingId, clientEmail);
+        b.setOrderTrackingId(orderTrackingId);
+        return toResponse(bookingRepo.save(b));
+    }
+
+    /**
+     * Confirm a booking as paid from a trusted server-side signal (Pesapal IPN,
+     * already verified against GetTransactionStatus). Idempotent: only a booking
+     * still awaiting payment is advanced, so re-delivered IPNs are harmless.
+     */
+    public void confirmPaidByTrackingId(String orderTrackingId) {
+        if (orderTrackingId == null || orderTrackingId.isBlank()) return;
+        bookingRepo.findByOrderTrackingId(orderTrackingId).ifPresent(b -> {
+            if (b.getStatus() == Booking.Status.PENDING_PAYMENT) {
+                b.setStatus(Booking.Status.AWAITING_APPROVAL);
+                bookingRepo.save(b);
+            }
+        });
+    }
+
     public BookingDto.Response markFailed(String clientEmail, UUID bookingId) {
         Booking b = ownedByClient(bookingId, clientEmail);
         b.setStatus(Booking.Status.FAILED);

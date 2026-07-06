@@ -33,6 +33,13 @@ public class BookingController {
         return bookingService.myBookings(user.getUsername());
     }
 
+    @PostMapping("/{id}/attach-order")
+    public BookingDto.Response attachOrder(@AuthenticationPrincipal UserDetails user,
+                                           @PathVariable UUID id,
+                                           @RequestBody BookingDto.PaidRequest req) {
+        return bookingService.attachOrder(user.getUsername(), id, req.getOrderTrackingId());
+    }
+
     @PostMapping("/{id}/paid")
     public BookingDto.Response paid(@AuthenticationPrincipal UserDetails user,
                                     @PathVariable UUID id,

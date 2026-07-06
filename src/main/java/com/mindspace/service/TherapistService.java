@@ -7,6 +7,7 @@ import com.mindspace.repository.BookingRepository;
 import com.mindspace.repository.TherapistProfileRepository;
 import com.mindspace.repository.UserRepository;
 import com.mindspace.repository.WithdrawalRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,15 +28,20 @@ public class TherapistService {
     private final BookingRepository bookingRepository;
     private final WithdrawalRepository withdrawalRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MailService mailService;
+
+    @Value("${app.therapist.portal-url:}")
+    private String portalUrl;
 
     public TherapistService(TherapistProfileRepository profileRepo, UserRepository userRepository,
                             BookingRepository bookingRepository, WithdrawalRepository withdrawalRepository,
-                            PasswordEncoder passwordEncoder) {
+                            PasswordEncoder passwordEncoder, MailService mailService) {
         this.profileRepo = profileRepo;
         this.userRepository = userRepository;
         this.bookingRepository = bookingRepository;
         this.withdrawalRepository = withdrawalRepository;
         this.passwordEncoder = passwordEncoder;
+        this.mailService = mailService;
     }
 
     public TherapistDto.Response update(UUID profileId, TherapistDto.UpdateRequest req) {
@@ -96,7 +102,28 @@ public class TherapistService {
         p.setInitials(initials(req.getName()));
         p.setColor(PALETTE[Math.floorMod(req.getName().hashCode(), PALETTE.length)]);
         profileRepo.save(p);
+        sendWelcomeEmail(req.getName(), req.getEmail(), req.getPassword());
         return toResponse(p);
+    }
+
+    /** Best-effort email to a newly created therapist with their sign-in details. */
+    private void sendWelcomeEmail(String name, String email, String password) {
+        try {
+            String where = portalUrl == null || portalUrl.isBlank()
+                    ? "the MindSpace therapist portal"
+                    : portalUrl;
+            String body =
+                    "Hi " + name + ",\n\n" +
+                    "A MindSpace therapist account has been created for you. You can now sign in to " + where + " with:\n\n" +
+                    "   Email:    " + email + "\n" +
+                    "   Password: " + password + "\n\n" +
+                    "Please sign in and change your password, then set your availability, session price and payout details in your profile.\n\n" +
+                    "Clients will only see you once you turn your availability on.\n\n" +
+                    "— MindSpace";
+            mailService.send(email, "Your MindSpace therapist account", body);
+        } catch (Exception ignored) {
+            // never let a mail failure block account creation
+        }
     }
 
     public List<TherapistDto.Response> list() {

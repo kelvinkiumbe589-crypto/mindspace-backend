@@ -56,6 +56,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/support/**").authenticated()
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/login/oauth2/**").permitAll()
+                        // Anyone can read the community forum; posting/replying needs an account.
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/forum/**").permitAll()
                         .requestMatchers("/api/forum/**").authenticated()
                         .requestMatchers("/api/moods/**").authenticated()
                         .anyRequest().authenticated()

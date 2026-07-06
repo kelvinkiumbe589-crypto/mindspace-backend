@@ -16,9 +16,9 @@ public class AuthController {
         this.authService = authService;
     }
 
-    // Step 1: validate + send an email verification code
+    // Step 1: create the account (OTP off) or send an email verification code (OTP on)
     @PostMapping("/register")
-    public ResponseEntity<AuthDto.PendingResponse> register(
+    public ResponseEntity<?> register(
             @Valid @RequestBody AuthDto.RegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));
     }

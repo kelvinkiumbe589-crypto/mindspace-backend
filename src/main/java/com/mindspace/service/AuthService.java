@@ -28,6 +28,11 @@ public class AuthService {
     @Value("${app.admin.emails:}")
     private String adminEmails;
 
+    // When false (e.g. on hosts that block SMTP), skip email OTP — register/login
+    // return a token directly. Default true keeps the 2-step verification.
+    @Value("${app.otp.enabled:true}")
+    private boolean otpEnabled;
+
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
                        JwtUtil jwtUtil,
@@ -66,13 +71,25 @@ public class AuthService {
         return user;
     }
 
-    // Step 1 of registration: validate, stash pending details, email a code.
-    public AuthDto.PendingResponse register(AuthDto.RegisterRequest request) {
+    // Step 1 of registration: validate, then either create the account directly
+    // (OTP off) or stash pending details and email a code (OTP on).
+    // Returns AuthResponse (OTP off) or PendingResponse (OTP on).
+    public Object register(AuthDto.RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email is already registered");
         }
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Username is already taken");
+        }
+        if (!otpEnabled) {
+            User user = User.builder()
+                    .username(request.getUsername())
+                    .email(request.getEmail())
+                    .passwordHash(passwordEncoder.encode(request.getPassword()))
+                    .role(User.Role.USER)
+                    .build();
+            userRepository.save(user);
+            return issueToken(user);
         }
         otpService.issue(request.getEmail(), EmailOtp.Purpose.REGISTER,
                 request.getUsername(), passwordEncoder.encode(request.getPassword()));
@@ -93,6 +110,11 @@ public class AuthService {
 
         // Staff (admin/therapist) sign in with just a password — no email OTP.
         if (user.getRole() == User.Role.ADMIN || user.getRole() == User.Role.THERAPIST) {
+            return issueToken(user);
+        }
+
+        // OTP globally disabled (e.g. host blocks email) → password-only login.
+        if (!otpEnabled) {
             return issueToken(user);
         }
 

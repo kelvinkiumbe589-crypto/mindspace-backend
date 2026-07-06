@@ -11,4 +11,4 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 # Bind to the platform-provided $PORT (Render/Cloud Run set it) or 8080 locally.
-ENTRYPOINT ["sh", "-c", "java -jar app.jar --server.port=${PORT:-8080}"]
+ENTRYPOINT ["sh", "-c", "java -Duser.timezone=UTC -jar app.jar --server.port=${PORT:-8080}"]

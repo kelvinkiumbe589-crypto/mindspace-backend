@@ -201,9 +201,12 @@ public class BookingService {
         r.clientEmail = b.getClient().getEmail();
         r.sessionType = b.getSessionType();
         r.amount = b.getAmount();
+        // scheduledAt is the user-picked wall-clock time — keep it naive (no zone).
         r.scheduledAt = b.getScheduledAt() == null ? null : b.getScheduledAt().toString();
         r.status = b.getStatus().name();
-        r.createdAt = b.getCreatedAt() == null ? null : b.getCreatedAt().toString();
+        // createdAt is a server-generated UTC instant — mark it as UTC so the browser
+        // converts it to the viewer's local time correctly.
+        r.createdAt = b.getCreatedAt() == null ? null : b.getCreatedAt().atOffset(java.time.ZoneOffset.UTC).toString();
         r.rating = b.getRating();
         return r;
     }

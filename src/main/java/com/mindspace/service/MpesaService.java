@@ -20,18 +20,18 @@ import java.util.Map;
 @Service
 public class MpesaService {
 
-    @Value("${app.mpesa.base-url}") private String baseUrl;
-    @Value("${app.mpesa.consumer-key}") private String consumerKey;
-    @Value("${app.mpesa.consumer-secret}") private String consumerSecret;
-    @Value("${app.mpesa.shortcode}") private String shortcode;
-    @Value("${app.mpesa.passkey}") private String passkey;
-    @Value("${app.mpesa.callback-url}") private String callbackUrl;
+    @Value("${app.mpesa.base-url:}") private String baseUrl;
+    @Value("${app.mpesa.consumer-key:}") private String consumerKey;
+    @Value("${app.mpesa.consumer-secret:}") private String consumerSecret;
+    @Value("${app.mpesa.shortcode:}") private String shortcode;
+    @Value("${app.mpesa.passkey:}") private String passkey;
+    @Value("${app.mpesa.callback-url:}") private String callbackUrl;
 
-    @Value("${app.mpesa.b2c.shortcode}") private String b2cShortcode;
-    @Value("${app.mpesa.b2c.initiator-name}") private String b2cInitiator;
-    @Value("${app.mpesa.b2c.security-credential}") private String b2cSecurityCredential;
-    @Value("${app.mpesa.b2c.result-url}") private String b2cResultUrl;
-    @Value("${app.mpesa.b2c.timeout-url}") private String b2cTimeoutUrl;
+    @Value("${app.mpesa.b2c.shortcode:}") private String b2cShortcode;
+    @Value("${app.mpesa.b2c.initiator-name:}") private String b2cInitiator;
+    @Value("${app.mpesa.b2c.security-credential:}") private String b2cSecurityCredential;
+    @Value("${app.mpesa.b2c.result-url:}") private String b2cResultUrl;
+    @Value("${app.mpesa.b2c.timeout-url:}") private String b2cTimeoutUrl;
 
     private final RestClient rest = RestClient.create();
     private final ObjectMapper mapper = new ObjectMapper();

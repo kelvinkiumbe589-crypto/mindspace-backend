@@ -18,7 +18,7 @@ public class AIInsightService {
     private final MoodEntryRepository moodEntryRepository;
     private final RestClient restClient;
 
-    @Value("${app.gemini.api-key}")
+    @Value("${app.gemini.api-key:}")
     private String geminiApiKey;
 
     public AIInsightService(MoodEntryRepository moodEntryRepository) {

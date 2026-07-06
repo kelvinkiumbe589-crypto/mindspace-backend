@@ -9,6 +9,6 @@ RUN mvn -q -DskipTests clean package
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
-# App Runner / ECS route traffic to this port (Spring Boot default 8080).
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Bind to the platform-provided $PORT (Render/Cloud Run set it) or 8080 locally.
+ENTRYPOINT ["sh", "-c", "java -jar app.jar --server.port=${PORT:-8080}"]

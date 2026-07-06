@@ -34,19 +34,28 @@ public class SupportService {
         this.mailService = mailService;
     }
 
-    /** Best-effort email to the admin so they're notified of a new support message. */
+    /**
+     * Best-effort email to the admin so they're notified of a new support message.
+     * Runs on a background thread so email latency never delays (or blocks) saving
+     * the message — the message reaching the admin dashboard is what matters.
+     */
     private void notifyAdmin(User user, String text) {
-        try {
-            String body =
-                    "You have a new support message in MindSpace.\n\n" +
-                    "From:  " + user.getUsername() + "\n" +
-                    "Email: " + user.getEmail() + "\n\n" +
-                    "Message:\n" + text + "\n\n" +
-                    "Reply from the admin dashboard (Support tab).";
-            mailService.send(adminRecipient, "New MindSpace support message from " + user.getUsername(), body);
-        } catch (Exception ignored) {
-            // never let a mail failure block saving the message
-        }
+        String body =
+                "You have a new support message in MindSpace.\n\n" +
+                "From:  " + user.getUsername() + "\n" +
+                "Email: " + user.getEmail() + "\n\n" +
+                "Message:\n" + text + "\n\n" +
+                "Reply from the admin dashboard (Support tab).";
+        String subject = "New MindSpace support message from " + user.getUsername();
+        Thread t = new Thread(() -> {
+            try {
+                mailService.send(adminRecipient, subject, body);
+            } catch (Exception ignored) {
+                // never let a mail failure affect the saved message
+            }
+        }, "support-notify-admin");
+        t.setDaemon(true);
+        t.start();
     }
 
     private User getUser(String email) {

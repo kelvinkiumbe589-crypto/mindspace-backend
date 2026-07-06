@@ -89,10 +89,19 @@ public class OtpService {
                 "        " + code + "\n\n" +
                 "The code expires in " + EXPIRY_MINUTES + " minutes. If you didn't request it, you can ignore this email.\n\n" +
                 "— MindSpace";
-        boolean sent = mailService.send(email, subject, text);
-        if (!sent) {
-            // Dev fallback: no provider configured — log so testing can continue.
-            log.warn("Mail not configured — verification code for {} ({}): {}", email, purpose, code);
-        }
+        // Send on a background thread so a slow/blocked mail provider never delays
+        // (or hangs) the register/login response. The code is already persisted.
+        Thread t = new Thread(() -> {
+            try {
+                boolean sent = mailService.send(email, subject, text);
+                if (!sent) {
+                    log.warn("Mail not configured — verification code for {} ({}): {}", email, purpose, code);
+                }
+            } catch (Exception e) {
+                log.warn("Verification email send failed for {} ({}): {}", email, purpose, e.getMessage());
+            }
+        }, "otp-email");
+        t.setDaemon(true);
+        t.start();
     }
 }

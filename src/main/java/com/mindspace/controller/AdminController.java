@@ -9,6 +9,8 @@ import com.mindspace.repository.BookingRepository;
 import com.mindspace.repository.MoodEntryRepository;
 import com.mindspace.repository.SupportMessageRepository;
 import com.mindspace.repository.UserRepository;
+import com.mindspace.dto.RatingDto;
+import com.mindspace.service.RatingService;
 import com.mindspace.service.TherapistService;
 import com.mindspace.service.TipService;
 import com.mindspace.service.WalletService;
@@ -36,11 +38,13 @@ public class AdminController {
     private final BookingRepository bookingRepository;
     private final WalletService walletService;
     private final TipService tipService;
+    private final RatingService ratingService;
 
     public AdminController(UserRepository userRepository, MoodEntryRepository moodEntryRepository,
                            SupportMessageRepository supportMessageRepository,
                            TherapistService therapistService, BookingRepository bookingRepository,
-                           WalletService walletService, TipService tipService) {
+                           WalletService walletService, TipService tipService,
+                           RatingService ratingService) {
         this.userRepository = userRepository;
         this.moodEntryRepository = moodEntryRepository;
         this.supportMessageRepository = supportMessageRepository;
@@ -48,6 +52,18 @@ public class AdminController {
         this.bookingRepository = bookingRepository;
         this.walletService = walletService;
         this.tipService = tipService;
+        this.ratingService = ratingService;
+    }
+
+    // ── App ratings ──
+    @GetMapping("/ratings")
+    public List<RatingDto.Response> ratings() {
+        return ratingService.all();
+    }
+
+    @GetMapping("/ratings/summary")
+    public RatingDto.Summary ratingsSummary() {
+        return ratingService.summary();
     }
 
     // ── Payouts (withdrawals) ──

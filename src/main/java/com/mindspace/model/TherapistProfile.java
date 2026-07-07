@@ -37,13 +37,14 @@ public class TherapistProfile {
 
     // Where in-person sessions happen. The address is a business/clinic location the
     // client sees after their booking is approved — never a personal contact.
-    @Column(name = "practice_address", length = 255)
+    @Column(name = "practice_address", length = 500)
     private String practiceAddress;
 
-    @Column(name = "practice_map_url", length = 255)
+    // Google Maps links can be very long, so store as TEXT (no length limit).
+    @Column(name = "practice_map_url", columnDefinition = "TEXT")
     private String practiceMapUrl;
 
-    @Column(name = "practice_notes", length = 255)
+    @Column(name = "practice_notes", length = 500)
     private String practiceNotes;
 
     @Column(length = 8)

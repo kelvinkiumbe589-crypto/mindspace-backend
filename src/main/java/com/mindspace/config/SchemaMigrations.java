@@ -28,6 +28,11 @@ public class SchemaMigrations implements ApplicationRunner {
         // Guest (not-logged-in) support conversations store a null user_id, but the
         // column was originally NOT NULL. Dropping it is a no-op once already applied.
         run("ALTER TABLE support_messages ALTER COLUMN user_id DROP NOT NULL");
+
+        // Google Maps links overflow the original 255-char columns — widen them.
+        run("ALTER TABLE therapist_profiles ALTER COLUMN practice_map_url TYPE text");
+        run("ALTER TABLE therapist_profiles ALTER COLUMN practice_address TYPE varchar(500)");
+        run("ALTER TABLE therapist_profiles ALTER COLUMN practice_notes TYPE varchar(500)");
     }
 
     private void run(String sql) {

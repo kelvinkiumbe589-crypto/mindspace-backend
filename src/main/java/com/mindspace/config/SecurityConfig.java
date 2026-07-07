@@ -53,6 +53,8 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/therapists/**").permitAll()
                         .requestMatchers("/api/therapist/**").hasRole("THERAPIST")
                         .requestMatchers("/api/bookings/**").authenticated()
+                        // Landing-page visitors (not logged in) can start a support conversation.
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/support/guest").permitAll()
                         .requestMatchers("/api/support/**").authenticated()
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/login/oauth2/**").permitAll()

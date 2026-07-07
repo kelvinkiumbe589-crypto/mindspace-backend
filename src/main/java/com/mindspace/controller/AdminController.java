@@ -141,8 +141,11 @@ public class AdminController {
         long newUsers7d = userRepository.countByCreatedAtAfter(now.minusDays(7));
         long newUsers30d = userRepository.countByCreatedAtAfter(now.minusDays(30));
         long totalMoods = moodEntryRepository.count();
+        // Count distinct conversations across both logged-in users and guests.
         long conversations = supportMessageRepository.findAll().stream()
-                .map(m -> m.getUser().getId()).distinct().count();
+                .map(m -> m.getUser() != null ? m.getUser().getId().toString() : m.getGuestKey())
+                .filter(k -> k != null)
+                .distinct().count();
 
         // Paid transactions = bookings that got past payment
         List<Booking> bookings = bookingRepository.findAll();

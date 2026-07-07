@@ -29,6 +29,12 @@ public class SupportController {
         return supportService.sendUserMessage(userDetails.getUsername(), request.getText());
     }
 
+    // ── Guest (public, not logged in) — from the landing-page support form ──
+    @PostMapping("/guest")
+    public SupportDto.MessageResponse guest(@Valid @RequestBody SupportDto.GuestRequest request) {
+        return supportService.sendGuestMessage(request.getName(), request.getEmail(), request.getMessage());
+    }
+
     @GetMapping("/me")
     public List<SupportDto.MessageResponse> myThread(@AuthenticationPrincipal UserDetails userDetails) {
         return supportService.myThread(userDetails.getUsername());

@@ -15,6 +15,23 @@ public class SupportDto {
         public void setText(String text) { this.text = text; }
     }
 
+    // A support message from a not-logged-in visitor on the landing page.
+    public static class GuestRequest {
+        @NotBlank(message = "Name is required")
+        private String name;
+        @NotBlank(message = "Email is required")
+        private String email;
+        @NotBlank(message = "Message is required")
+        private String message;
+
+        public String getName() { return name; }
+        public String getEmail() { return email; }
+        public String getMessage() { return message; }
+        public void setName(String name) { this.name = name; }
+        public void setEmail(String email) { this.email = email; }
+        public void setMessage(String message) { this.message = message; }
+    }
+
     public static class MessageResponse {
         private UUID id;
         private String text;
@@ -43,9 +60,10 @@ public class SupportDto {
         private boolean lastFromAdmin;
         private LocalDateTime lastAt;
         private int messageCount;
+        private boolean guest; // true for not-logged-in visitors (replies go by email)
 
         public Conversation(UUID userId, String username, String email, String lastMessage,
-                            boolean lastFromAdmin, LocalDateTime lastAt, int messageCount) {
+                            boolean lastFromAdmin, LocalDateTime lastAt, int messageCount, boolean guest) {
             this.userId = userId;
             this.username = username;
             this.email = email;
@@ -53,6 +71,7 @@ public class SupportDto {
             this.lastFromAdmin = lastFromAdmin;
             this.lastAt = lastAt;
             this.messageCount = messageCount;
+            this.guest = guest;
         }
 
         public UUID getUserId() { return userId; }
@@ -62,5 +81,6 @@ public class SupportDto {
         public boolean isLastFromAdmin() { return lastFromAdmin; }
         public LocalDateTime getLastAt() { return lastAt; }
         public int getMessageCount() { return messageCount; }
+        public boolean isGuest() { return guest; }
     }
 }

@@ -11,4 +11,8 @@ public interface SupportMessageRepository extends JpaRepository<SupportMessage, 
     List<SupportMessage> findByUserOrderByCreatedAtAsc(User user);
     List<SupportMessage> findByUserIdOrderByCreatedAtAsc(UUID userId);
     List<SupportMessage> findAllByOrderByCreatedAtAsc();
+
+    // Guest (not-logged-in) conversations.
+    List<SupportMessage> findByUserIsNullOrderByCreatedAtAsc();
+    List<SupportMessage> findByGuestKeyOrderByCreatedAtAsc(String guestKey);
 }

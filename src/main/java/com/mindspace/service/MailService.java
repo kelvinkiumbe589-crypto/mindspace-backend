@@ -120,6 +120,34 @@ public class MailService {
         t.start();
     }
 
+    /**
+     * Fire-and-forget email telling a post author someone replied. Runs on a daemon
+     * thread and never throws, so it can't delay or break saving the reply.
+     */
+    public void sendForumReplyAsync(String toEmail, String authorName, String replierName,
+                                    String postTitle, String replyText, String link) {
+        if (toEmail == null || toEmail.isBlank()) return;
+        String name = (authorName == null || authorName.isBlank()) ? "there" : authorName;
+        String who = (replierName == null || replierName.isBlank()) ? "Someone" : replierName;
+        String snippet = replyText == null ? "" : (replyText.length() > 300 ? replyText.substring(0, 300) + "…" : replyText);
+        String subject = who + " replied to your post on MindSpace";
+        String text =
+                "Hi " + name + ",\n\n" +
+                who + " replied to your post \"" + postTitle + "\":\n\n" +
+                "\"" + snippet + "\"\n\n" +
+                "Read and reply: " + link + "\n\n" +
+                "— The MindSpace team\n";
+        Thread t = new Thread(() -> {
+            try {
+                send(toEmail, subject, text);
+            } catch (Exception ignored) {
+                // never let a mail failure affect the saved reply
+            }
+        }, "forum-reply-email");
+        t.setDaemon(true);
+        t.start();
+    }
+
     private void sendViaBrevo(String to, String subject, String text) {
         Map<String, Object> body = Map.of(
                 "sender", Map.of("name", brevoSenderName, "email", senderEmail()),

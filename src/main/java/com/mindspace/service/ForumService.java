@@ -9,6 +9,7 @@ import com.mindspace.repository.ForumPostLikeRepository;
 import com.mindspace.repository.ForumPostRepository;
 import com.mindspace.repository.ForumReplyRepository;
 import com.mindspace.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,15 +24,24 @@ public class ForumService {
     private final ForumReplyRepository forumReplyRepository;
     private final ForumPostLikeRepository forumPostLikeRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
+    private final MailService mailService;
+
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
 
     public ForumService(ForumPostRepository forumPostRepository,
                         ForumReplyRepository forumReplyRepository,
                         ForumPostLikeRepository forumPostLikeRepository,
-                        UserRepository userRepository) {
+                        UserRepository userRepository,
+                        NotificationService notificationService,
+                        MailService mailService) {
         this.forumPostRepository = forumPostRepository;
         this.forumReplyRepository = forumReplyRepository;
         this.forumPostLikeRepository = forumPostLikeRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
+        this.mailService = mailService;
     }
 
     // ── Create a post ─────────────────────────────────────────────
@@ -116,8 +126,25 @@ public class ForumService {
         reply.setUser(user);
         reply.setContent(request.getContent());
         reply.setIsAnonymous(request.getIsAnonymous());
+        ForumReply saved = forumReplyRepository.save(reply);
 
-        return toReplyResponse(forumReplyRepository.save(reply));
+        notifyAuthorOfReply(post, user, request);
+        return toReplyResponse(saved);
+    }
+
+    // Alert the post's author (in-app + email) that someone replied — unless they're
+    // replying to their own post. The replier's name respects their anonymous choice.
+    private void notifyAuthorOfReply(ForumPost post, User replier, ForumDto.CreateReplyRequest request) {
+        User author = post.getUser();
+        if (author == null) return;
+        if (replier != null && author.getId().equals(replier.getId())) return;
+
+        boolean anon = Boolean.TRUE.equals(request.getIsAnonymous());
+        String who = (anon || replier == null) ? "Someone" : replier.getUsername();
+        String message = who + " replied to your post \"" + post.getTitle() + "\"";
+        notificationService.create(author, "FORUM_REPLY", message, "/community-forum");
+        mailService.sendForumReplyAsync(author.getEmail(), author.getUsername(), who,
+                post.getTitle(), request.getContent(), frontendUrl + "/community-forum");
     }
 
     // ── Helpers ───────────────────────────────────────────────────

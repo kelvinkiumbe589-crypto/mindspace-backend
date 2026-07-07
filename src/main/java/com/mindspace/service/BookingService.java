@@ -24,12 +24,20 @@ public class BookingService {
     private final BookingRepository bookingRepo;
     private final TherapistProfileRepository profileRepo;
     private final UserRepository userRepository;
+    private final MailService mailService;
+
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
+    @org.springframework.beans.factory.annotation.Value("${app.therapist.portal-url:}")
+    private String portalUrl;
 
     public BookingService(BookingRepository bookingRepo, TherapistProfileRepository profileRepo,
-                          UserRepository userRepository) {
+                          UserRepository userRepository, MailService mailService) {
         this.bookingRepo = bookingRepo;
         this.profileRepo = profileRepo;
         this.userRepository = userRepository;
+        this.mailService = mailService;
     }
 
     private User user(String email) {
@@ -67,9 +75,12 @@ public class BookingService {
 
     public BookingDto.Response markPaid(String clientEmail, UUID bookingId, String orderTrackingId) {
         Booking b = ownedByClient(bookingId, clientEmail);
+        boolean wasPending = b.getStatus() == Booking.Status.PENDING_PAYMENT;
         b.setStatus(Booking.Status.AWAITING_APPROVAL);
         b.setOrderTrackingId(orderTrackingId);
-        return toResponse(bookingRepo.save(b));
+        Booking saved = bookingRepo.save(b);
+        if (wasPending) notifyTherapistNewBooking(saved);
+        return toResponse(saved);
     }
 
     /**
@@ -94,7 +105,7 @@ public class BookingService {
         bookingRepo.findByOrderTrackingId(orderTrackingId).ifPresent(b -> {
             if (b.getStatus() == Booking.Status.PENDING_PAYMENT) {
                 b.setStatus(Booking.Status.AWAITING_APPROVAL);
-                bookingRepo.save(b);
+                notifyTherapistNewBooking(bookingRepo.save(b));
             }
         });
     }
@@ -159,7 +170,9 @@ public class BookingService {
         if ("PHYSICAL".equalsIgnoreCase(b.getSessionType()) && (b.getCheckInCode() == null || b.getCheckInCode().isBlank())) {
             b.setCheckInCode(generateCode());
         }
-        return toResponse(bookingRepo.save(b));
+        Booking saved = bookingRepo.save(b);
+        notifyClientApproved(saved);
+        return toResponse(saved);
     }
 
     public BookingDto.Response markDone(String therapistEmail, UUID bookingId) {
@@ -213,6 +226,77 @@ public class BookingService {
     private String firstName(String name) {
         if (name == null || name.isBlank()) return "Client";
         return name.trim().split("\\s+")[0];
+    }
+
+    // ── Lifecycle emails ──────────────────────────────────────────
+
+    private String therapistName(Booking b) {
+        return profileRepo.findByUserId(b.getTherapist().getId())
+                .map(TherapistProfile::getName).orElse(b.getTherapist().getUsername());
+    }
+
+    private String whenLabel(Booking b) {
+        return b.getScheduledAt() == null ? "a time to be confirmed" : b.getScheduledAt().toString().replace("T", " ");
+    }
+
+    // Therapist is told a new session was booked & paid — no client contact shared.
+    private void notifyTherapistNewBooking(Booking b) {
+        if (b.getTherapist() == null || b.getTherapist().getEmail() == null) return;
+        String kind = "PHYSICAL".equalsIgnoreCase(b.getSessionType()) ? "in-person" : "online";
+        String where = portalUrl == null || portalUrl.isBlank() ? "your MindSpace therapist portal" : portalUrl;
+        String body =
+                "Hi " + therapistName(b) + ",\n\n" +
+                "You have a new " + kind + " session request from a client (" + firstName(b.getClient().getUsername()) + ") for " + whenLabel(b) + ".\n\n" +
+                "Approve it in " + where + " — once you approve, the client is notified and you can message each other in the app.\n\n" +
+                "— MindSpace";
+        emailAsync(b.getTherapist().getEmail(), "New session request on MindSpace", body);
+    }
+
+    // Client is told their session is confirmed, with join/location + a calendar link.
+    private void notifyClientApproved(Booking b) {
+        if (b.getClient() == null || b.getClient().getEmail() == null) return;
+        boolean physical = "PHYSICAL".equalsIgnoreCase(b.getSessionType());
+        StringBuilder body = new StringBuilder();
+        body.append("Hi ").append(firstName(b.getClient().getUsername())).append(",\n\n")
+            .append("Good news — ").append(therapistName(b)).append(" approved your session for ").append(whenLabel(b)).append(".\n\n");
+        String location;
+        if (physical) {
+            TherapistProfile p = profileRepo.findByUserId(b.getTherapist().getId()).orElse(null);
+            String addr = p == null ? null : p.getPracticeAddress();
+            location = addr == null ? "In person" : addr;
+            body.append("It's an in-person session.\n");
+            if (addr != null) body.append("Location: ").append(addr).append("\n");
+            if (p != null && mapUrl(p) != null) body.append("Map: ").append(mapUrl(p)).append("\n");
+            if (b.getCheckInCode() != null) body.append("Your check-in code: ").append(b.getCheckInCode()).append("\n");
+        } else {
+            location = "Online (MindSpace)";
+            body.append("It's an online video session. Join from Find a Therapist → Upcoming: ")
+                .append(frontendUrl).append("/find-a-therapist\n");
+        }
+        String cal = googleCalendarLink("MindSpace session with " + therapistName(b), b.getScheduledAt(), location);
+        if (cal != null) body.append("\nAdd to Google Calendar: ").append(cal).append("\n");
+        body.append("\n— MindSpace");
+        emailAsync(b.getClient().getEmail(), "Your MindSpace session is confirmed", body.toString());
+    }
+
+    // A one-click "Add to Google Calendar" link for a 1-hour session.
+    private String googleCalendarLink(String title, LocalDateTime start, String location) {
+        if (start == null) return null;
+        java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
+        String dates = start.format(fmt) + "/" + start.plusHours(1).format(fmt);
+        return "https://calendar.google.com/calendar/render?action=TEMPLATE"
+                + "&text=" + URLEncoder.encode(title, StandardCharsets.UTF_8)
+                + "&dates=" + dates
+                + "&location=" + URLEncoder.encode(location == null ? "" : location, StandardCharsets.UTF_8)
+                + "&details=" + URLEncoder.encode("Your MindSpace therapy session.", StandardCharsets.UTF_8);
+    }
+
+    private void emailAsync(String to, String subject, String body) {
+        Thread t = new Thread(() -> {
+            try { mailService.send(to, subject, body); } catch (Exception ignored) {}
+        }, "booking-email");
+        t.setDaemon(true);
+        t.start();
     }
 
     private LocalDateTime parseWhen(String iso) {

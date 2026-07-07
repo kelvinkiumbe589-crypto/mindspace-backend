@@ -110,6 +110,33 @@ public class AdminController {
         return out;
     }
 
+    // ── Bookings / activity log ──
+    @GetMapping("/bookings")
+    public List<Map<String, Object>> bookings() {
+        List<Booking> all = new ArrayList<>(bookingRepository.findAll());
+        all.sort((a, b) -> {
+            if (a.getCreatedAt() == null) return 1;
+            if (b.getCreatedAt() == null) return -1;
+            return b.getCreatedAt().compareTo(a.getCreatedAt()); // newest first
+        });
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Booking b : all) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", b.getId().toString());
+            m.put("client", b.getClient() == null ? null : b.getClient().getUsername());
+            m.put("clientEmail", b.getClient() == null ? null : b.getClient().getEmail());
+            m.put("therapist", b.getTherapist() == null ? null : b.getTherapist().getUsername());
+            m.put("sessionType", b.getSessionType());
+            m.put("amount", b.getAmount());
+            m.put("status", b.getStatus().name());
+            m.put("checkedIn", b.isCheckedIn());
+            m.put("scheduledAt", b.getScheduledAt() == null ? null : b.getScheduledAt().toString());
+            m.put("createdAt", b.getCreatedAt() == null ? null : b.getCreatedAt().atOffset(java.time.ZoneOffset.UTC).toString());
+            out.add(m);
+        }
+        return out;
+    }
+
     // ── Therapist management ──
     @GetMapping("/therapists")
     public List<TherapistDto.Response> listTherapists() {

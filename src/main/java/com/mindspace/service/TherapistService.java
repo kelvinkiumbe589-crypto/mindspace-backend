@@ -54,6 +54,10 @@ public class TherapistService {
         p.setTitle(req.getTitle());
         p.setSpecialties(req.getSpecialties());
         if (req.getPriceOnline() > 0) p.setPriceOnline(req.getPriceOnline());
+        if (req.getPricePhysical() != null) p.setPricePhysical(req.getPricePhysical() > 0 ? req.getPricePhysical() : null);
+        if (req.getPracticeAddress() != null) p.setPracticeAddress(req.getPracticeAddress());
+        if (req.getPracticeMapUrl() != null) p.setPracticeMapUrl(req.getPracticeMapUrl());
+        if (req.getPracticeNotes() != null) p.setPracticeNotes(req.getPracticeNotes());
         p.setBio(req.getBio());
         if (req.getAvailable() != null) p.setAvailable(req.getAvailable());
 

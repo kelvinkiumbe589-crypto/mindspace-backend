@@ -52,6 +52,10 @@ public class TherapistDto {
         private String title;
         private String specialties;
         private int priceOnline;
+        private Integer pricePhysical;
+        private String practiceAddress;
+        private String practiceMapUrl;
+        private String practiceNotes;
         private String bio;
         private Boolean available;
 
@@ -61,6 +65,10 @@ public class TherapistDto {
         public String getTitle() { return title; }
         public String getSpecialties() { return specialties; }
         public int getPriceOnline() { return priceOnline; }
+        public Integer getPricePhysical() { return pricePhysical; }
+        public String getPracticeAddress() { return practiceAddress; }
+        public String getPracticeMapUrl() { return practiceMapUrl; }
+        public String getPracticeNotes() { return practiceNotes; }
         public String getBio() { return bio; }
         public Boolean getAvailable() { return available; }
         public void setName(String name) { this.name = name; }
@@ -69,6 +77,10 @@ public class TherapistDto {
         public void setTitle(String title) { this.title = title; }
         public void setSpecialties(String specialties) { this.specialties = specialties; }
         public void setPriceOnline(int priceOnline) { this.priceOnline = priceOnline; }
+        public void setPricePhysical(Integer pricePhysical) { this.pricePhysical = pricePhysical; }
+        public void setPracticeAddress(String practiceAddress) { this.practiceAddress = practiceAddress; }
+        public void setPracticeMapUrl(String practiceMapUrl) { this.practiceMapUrl = practiceMapUrl; }
+        public void setPracticeNotes(String practiceNotes) { this.practiceNotes = practiceNotes; }
         public void setBio(String bio) { this.bio = bio; }
         public void setAvailable(Boolean available) { this.available = available; }
     }

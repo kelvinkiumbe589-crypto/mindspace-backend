@@ -31,6 +31,21 @@ public class TherapistProfile {
     @Column(name = "price_online", nullable = false)
     private int priceOnline = 2000; // KES
 
+    // In-person session price (KES). Null → fall back to a multiple of the online price.
+    @Column(name = "price_physical")
+    private Integer pricePhysical;
+
+    // Where in-person sessions happen. The address is a business/clinic location the
+    // client sees after their booking is approved — never a personal contact.
+    @Column(name = "practice_address", length = 255)
+    private String practiceAddress;
+
+    @Column(name = "practice_map_url", length = 255)
+    private String practiceMapUrl;
+
+    @Column(name = "practice_notes", length = 255)
+    private String practiceNotes;
+
     @Column(length = 8)
     private String initials;
 
@@ -84,6 +99,10 @@ public class TherapistProfile {
     public String getTitle() { return title; }
     public String getSpecialties() { return specialties; }
     public int getPriceOnline() { return priceOnline; }
+    public Integer getPricePhysical() { return pricePhysical; }
+    public String getPracticeAddress() { return practiceAddress; }
+    public String getPracticeMapUrl() { return practiceMapUrl; }
+    public String getPracticeNotes() { return practiceNotes; }
     public String getInitials() { return initials; }
     public String getColor() { return color; }
     public String getBio() { return bio; }
@@ -103,6 +122,10 @@ public class TherapistProfile {
     public void setTitle(String title) { this.title = title; }
     public void setSpecialties(String specialties) { this.specialties = specialties; }
     public void setPriceOnline(int priceOnline) { this.priceOnline = priceOnline; }
+    public void setPricePhysical(Integer pricePhysical) { this.pricePhysical = pricePhysical; }
+    public void setPracticeAddress(String practiceAddress) { this.practiceAddress = practiceAddress; }
+    public void setPracticeMapUrl(String practiceMapUrl) { this.practiceMapUrl = practiceMapUrl; }
+    public void setPracticeNotes(String practiceNotes) { this.practiceNotes = practiceNotes; }
     public void setInitials(String initials) { this.initials = initials; }
     public void setColor(String color) { this.color = color; }
     public void setBio(String bio) { this.bio = bio; }

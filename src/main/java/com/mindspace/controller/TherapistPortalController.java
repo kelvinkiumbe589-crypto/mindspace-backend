@@ -75,4 +75,11 @@ public class TherapistPortalController {
     public BookingDto.Response done(@AuthenticationPrincipal UserDetails therapist, @PathVariable UUID id) {
         return bookingService.markDone(therapist.getUsername(), id);
     }
+
+    // Verify the check-in code the client presents at an in-person session.
+    @PostMapping("/bookings/{id}/checkin")
+    public BookingDto.Response checkin(@AuthenticationPrincipal UserDetails therapist, @PathVariable UUID id,
+                                       @RequestBody java.util.Map<String, String> body) {
+        return bookingService.checkIn(therapist.getUsername(), id, body.get("code"));
+    }
 }

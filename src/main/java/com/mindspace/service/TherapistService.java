@@ -157,7 +157,11 @@ public class TherapistService {
                 ? List.of()
                 : Arrays.stream(p.getSpecialties().split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
         r.priceOnline = p.getPriceOnline();
-        r.pricePhysical = (int) Math.round(p.getPriceOnline() * 1.5);
+        r.pricePhysical = effectivePhysicalPrice(p);
+        r.pricePhysicalSet = p.getPricePhysical();
+        r.practiceAddress = p.getPracticeAddress();
+        r.practiceMapUrl = p.getPracticeMapUrl();
+        r.practiceNotes = p.getPracticeNotes();
         r.initials = p.getInitials();
         r.color = p.getColor();
         r.bio = p.getBio();
@@ -185,6 +189,10 @@ public class TherapistService {
     public TherapistDto.Response updateOwnProfile(String email, TherapistDto.SelfUpdateRequest req) {
         TherapistProfile p = ownProfile(email);
         if (req.getPriceOnline() > 0) p.setPriceOnline(req.getPriceOnline());
+        if (req.getPricePhysical() != null) p.setPricePhysical(req.getPricePhysical() > 0 ? req.getPricePhysical() : null);
+        if (req.getPracticeAddress() != null) p.setPracticeAddress(req.getPracticeAddress());
+        if (req.getPracticeMapUrl() != null) p.setPracticeMapUrl(req.getPracticeMapUrl());
+        if (req.getPracticeNotes() != null) p.setPracticeNotes(req.getPracticeNotes());
         if (req.getTitle() != null) p.setTitle(req.getTitle());
         if (req.getSpecialties() != null) p.setSpecialties(req.getSpecialties());
         if (req.getBio() != null) p.setBio(req.getBio());
@@ -208,6 +216,12 @@ public class TherapistService {
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
         return profileRepo.findByUserId(u.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Therapist profile not found"));
+    }
+
+    // In-person price: the therapist's set price, or a 1.5x fallback of the online price.
+    public static int effectivePhysicalPrice(TherapistProfile p) {
+        if (p.getPricePhysical() != null && p.getPricePhysical() > 0) return p.getPricePhysical();
+        return (int) Math.round(p.getPriceOnline() * 1.5);
     }
 
     private List<Integer> parseInts(String csv) {

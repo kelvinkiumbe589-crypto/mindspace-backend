@@ -11,6 +11,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -50,7 +53,7 @@ public class BookingService {
                 .orElseThrow(() -> new IllegalArgumentException("Therapist not found"));
 
         boolean physical = "PHYSICAL".equalsIgnoreCase(req.getSessionType());
-        int amount = physical ? (int) Math.round(profile.getPriceOnline() * 1.5) : profile.getPriceOnline();
+        int amount = physical ? TherapistService.effectivePhysicalPrice(profile) : profile.getPriceOnline();
 
         Booking b = new Booking();
         b.setClient(client);
@@ -152,6 +155,10 @@ public class BookingService {
     public BookingDto.Response approve(String therapistEmail, UUID bookingId) {
         Booking b = ownedByTherapist(bookingId, therapistEmail);
         b.setStatus(Booking.Status.APPROVED);
+        // In-person sessions get a check-in code the client shows on arrival.
+        if ("PHYSICAL".equalsIgnoreCase(b.getSessionType()) && (b.getCheckInCode() == null || b.getCheckInCode().isBlank())) {
+            b.setCheckInCode(generateCode());
+        }
         return toResponse(bookingRepo.save(b));
     }
 
@@ -159,6 +166,28 @@ public class BookingService {
         Booking b = ownedByTherapist(bookingId, therapistEmail);
         b.setStatus(Booking.Status.DONE);
         return toResponse(bookingRepo.save(b));
+    }
+
+    /** Therapist verifies the code the client shows at an in-person session. */
+    public BookingDto.Response checkIn(String therapistEmail, UUID bookingId, String code) {
+        Booking b = ownedByTherapist(bookingId, therapistEmail);
+        if (!"PHYSICAL".equalsIgnoreCase(b.getSessionType())) {
+            throw new IllegalArgumentException("This isn't an in-person session.");
+        }
+        if (b.getCheckInCode() == null || code == null || !b.getCheckInCode().equalsIgnoreCase(code.trim())) {
+            throw new IllegalArgumentException("That check-in code doesn't match.");
+        }
+        b.setCheckedIn(true);
+        return toResponse(bookingRepo.save(b));
+    }
+
+    private static final char[] CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".toCharArray();
+    private static final SecureRandom RNG = new SecureRandom();
+
+    private String generateCode() {
+        StringBuilder sb = new StringBuilder(6);
+        for (int i = 0; i < 6; i++) sb.append(CODE_ALPHABET[RNG.nextInt(CODE_ALPHABET.length)]);
+        return sb.toString();
     }
 
     // ── helpers ──
@@ -214,6 +243,30 @@ public class BookingService {
         // converts it to the viewer's local time correctly.
         r.createdAt = b.getCreatedAt() == null ? null : b.getCreatedAt().atOffset(java.time.ZoneOffset.UTC).toString();
         r.rating = b.getRating();
+        r.checkedIn = b.isCheckedIn();
+
+        // Reveal in-person location + check-in code only once the booking is approved.
+        boolean physical = "PHYSICAL".equalsIgnoreCase(b.getSessionType());
+        boolean revealed = b.getStatus() == Booking.Status.APPROVED || b.getStatus() == Booking.Status.DONE;
+        if (physical && revealed) {
+            profileRepo.findByUserId(b.getTherapist().getId()).ifPresent(p -> {
+                r.practiceAddress = p.getPracticeAddress();
+                r.practiceNotes = p.getPracticeNotes();
+                r.practiceMapUrl = mapUrl(p);
+            });
+            r.checkInCode = b.getCheckInCode();
+        }
         return r;
+    }
+
+    // A maps link the client can tap: the therapist's own link if set, else a
+    // Google Maps search for the practice address.
+    private String mapUrl(TherapistProfile p) {
+        if (p.getPracticeMapUrl() != null && !p.getPracticeMapUrl().isBlank()) return p.getPracticeMapUrl();
+        if (p.getPracticeAddress() != null && !p.getPracticeAddress().isBlank()) {
+            return "https://www.google.com/maps/search/?api=1&query="
+                    + URLEncoder.encode(p.getPracticeAddress(), StandardCharsets.UTF_8);
+        }
+        return null;
     }
 }

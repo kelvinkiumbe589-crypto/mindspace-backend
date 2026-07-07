@@ -76,6 +76,10 @@ public class TherapistDto {
     /** A therapist updates their OWN profile (price + availability). */
     public static class SelfUpdateRequest {
         private int priceOnline;
+        private Integer pricePhysical;
+        private String practiceAddress;
+        private String practiceMapUrl;
+        private String practiceNotes;
         private String title;
         private String specialties;
         private String bio;
@@ -89,6 +93,10 @@ public class TherapistDto {
         private String payoutAccountName;
 
         public int getPriceOnline() { return priceOnline; }
+        public Integer getPricePhysical() { return pricePhysical; }
+        public String getPracticeAddress() { return practiceAddress; }
+        public String getPracticeMapUrl() { return practiceMapUrl; }
+        public String getPracticeNotes() { return practiceNotes; }
         public String getTitle() { return title; }
         public String getSpecialties() { return specialties; }
         public String getBio() { return bio; }
@@ -101,6 +109,10 @@ public class TherapistDto {
         public String getPayoutBankAccount() { return payoutBankAccount; }
         public String getPayoutAccountName() { return payoutAccountName; }
         public void setPriceOnline(int priceOnline) { this.priceOnline = priceOnline; }
+        public void setPricePhysical(Integer pricePhysical) { this.pricePhysical = pricePhysical; }
+        public void setPracticeAddress(String practiceAddress) { this.practiceAddress = practiceAddress; }
+        public void setPracticeMapUrl(String practiceMapUrl) { this.practiceMapUrl = practiceMapUrl; }
+        public void setPracticeNotes(String practiceNotes) { this.practiceNotes = practiceNotes; }
         public void setTitle(String title) { this.title = title; }
         public void setSpecialties(String specialties) { this.specialties = specialties; }
         public void setBio(String bio) { this.bio = bio; }
@@ -122,7 +134,11 @@ public class TherapistDto {
         public String title;
         public List<String> specialties;
         public int priceOnline;
-        public int pricePhysical;
+        public int pricePhysical;          // effective price (override or 1.5x fallback)
+        public Integer pricePhysicalSet;   // raw override (null = auto) — for the therapist's own form
+        public String practiceAddress;
+        public String practiceMapUrl;
+        public String practiceNotes;
         public String initials;
         public String color;
         public String bio;

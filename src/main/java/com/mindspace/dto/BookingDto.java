@@ -46,5 +46,11 @@ public class BookingDto {
         public String status;
         public String createdAt;
         public Integer rating;
+        // In-person details — populated only for PHYSICAL bookings once approved.
+        public String practiceAddress;
+        public String practiceMapUrl;
+        public String practiceNotes;
+        public String checkInCode;
+        public boolean checkedIn;
     }
 }

@@ -43,6 +43,14 @@ public class Booking {
     @Column(name = "order_tracking_id", length = 100)
     private String orderTrackingId;
 
+    // For in-person sessions: a short code the client shows on arrival and the
+    // therapist verifies. Generated when the booking is approved.
+    @Column(name = "check_in_code", length = 8)
+    private String checkInCode;
+
+    @Column(name = "checked_in", nullable = false, columnDefinition = "boolean default false")
+    private boolean checkedIn = false;
+
     @Column
     private Integer rating; // 1-5, set by the client after the session is DONE
 
@@ -62,6 +70,8 @@ public class Booking {
     public LocalDateTime getScheduledAt() { return scheduledAt; }
     public Status getStatus() { return status; }
     public String getOrderTrackingId() { return orderTrackingId; }
+    public String getCheckInCode() { return checkInCode; }
+    public boolean isCheckedIn() { return checkedIn; }
     public Integer getRating() { return rating; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
@@ -72,5 +82,7 @@ public class Booking {
     public void setScheduledAt(LocalDateTime scheduledAt) { this.scheduledAt = scheduledAt; }
     public void setStatus(Status status) { this.status = status; }
     public void setOrderTrackingId(String orderTrackingId) { this.orderTrackingId = orderTrackingId; }
+    public void setCheckInCode(String checkInCode) { this.checkInCode = checkInCode; }
+    public void setCheckedIn(boolean checkedIn) { this.checkedIn = checkedIn; }
     public void setRating(Integer rating) { this.rating = rating; }
 }

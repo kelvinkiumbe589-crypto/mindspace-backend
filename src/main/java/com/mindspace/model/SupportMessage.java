@@ -36,6 +36,14 @@ public class SupportMessage {
     @Column(name = "from_admin", nullable = false)
     private boolean fromAdmin;
 
+    // For admin replies to a logged-in user: whether the user has opened their
+    // chat since (used to nudge users who haven't come back to read the reply).
+    @Column(name = "seen_by_user", nullable = false, columnDefinition = "boolean default false")
+    private boolean seenByUser = false;
+
+    @Column(name = "reminder_sent_at")
+    private LocalDateTime reminderSentAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -64,6 +72,8 @@ public class SupportMessage {
     public String getGuestKey() { return guestKey; }
     public String getText() { return text; }
     public boolean isFromAdmin() { return fromAdmin; }
+    public boolean isSeenByUser() { return seenByUser; }
+    public LocalDateTime getReminderSentAt() { return reminderSentAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
     public void setId(UUID id) { this.id = id; }
@@ -73,5 +83,7 @@ public class SupportMessage {
     public void setGuestKey(String guestKey) { this.guestKey = guestKey; }
     public void setText(String text) { this.text = text; }
     public void setFromAdmin(boolean fromAdmin) { this.fromAdmin = fromAdmin; }
+    public void setSeenByUser(boolean seenByUser) { this.seenByUser = seenByUser; }
+    public void setReminderSentAt(LocalDateTime reminderSentAt) { this.reminderSentAt = reminderSentAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

@@ -33,6 +33,10 @@ public class SchemaMigrations implements ApplicationRunner {
         run("ALTER TABLE therapist_profiles ALTER COLUMN practice_map_url TYPE text");
         run("ALTER TABLE therapist_profiles ALTER COLUMN practice_address TYPE varchar(500)");
         run("ALTER TABLE therapist_profiles ALTER COLUMN practice_notes TYPE varchar(500)");
+
+        // Don't nudge users about admin replies that already existed before this
+        // feature shipped — treat older replies as already seen.
+        run("UPDATE support_messages SET seen_by_user = true WHERE from_admin = true AND created_at < now() - interval '12 hours'");
     }
 
     private void run(String sql) {

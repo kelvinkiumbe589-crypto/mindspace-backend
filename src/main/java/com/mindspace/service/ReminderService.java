@@ -34,6 +34,7 @@ public class ReminderService {
     private final MoodEntryRepository moodEntryRepository;
     private final MailService mailService;
     private final JwtUtil jwtUtil;
+    private final SupportService supportService;
 
     // Only one batch may run at a time (guards against overlapping cron calls).
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -48,11 +49,12 @@ public class ReminderService {
     private String backendUrl;
 
     public ReminderService(UserRepository userRepository, MoodEntryRepository moodEntryRepository,
-                           MailService mailService, JwtUtil jwtUtil) {
+                           MailService mailService, JwtUtil jwtUtil, SupportService supportService) {
         this.userRepository = userRepository;
         this.moodEntryRepository = moodEntryRepository;
         this.mailService = mailService;
         this.jwtUtil = jwtUtil;
+        this.supportService = supportService;
     }
 
     /**
@@ -104,6 +106,13 @@ public class ReminderService {
         }
         log.info("Daily reminders done — sent={}, skipped={}, failed={}, total={}",
                 sent, skipped, failed, recipients.size());
+
+        // Also nudge users who haven't opened a support reply.
+        try {
+            supportService.sendSupportReplyReminders();
+        } catch (Exception e) {
+            log.warn("Support reply reminders failed: {}", e.getMessage());
+        }
     }
 
     private ZoneId resolveZone() {

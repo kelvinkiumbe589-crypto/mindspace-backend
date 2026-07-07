@@ -15,4 +15,7 @@ public interface SupportMessageRepository extends JpaRepository<SupportMessage, 
     // Guest (not-logged-in) conversations.
     List<SupportMessage> findByUserIsNullOrderByCreatedAtAsc();
     List<SupportMessage> findByGuestKeyOrderByCreatedAtAsc(String guestKey);
+
+    // Admin replies a user hasn't opened and we haven't nudged them about yet.
+    List<SupportMessage> findByFromAdminTrueAndSeenByUserFalseAndReminderSentAtIsNull();
 }

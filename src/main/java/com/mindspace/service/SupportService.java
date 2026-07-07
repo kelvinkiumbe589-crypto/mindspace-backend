@@ -28,6 +28,9 @@ public class SupportService {
     @Value("${app.contact.recipient:kelvinkiumbe589@gmail.com}")
     private String adminRecipient;
 
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
+
     public SupportService(SupportMessageRepository repo, UserRepository userRepository,
                           MailService mailService) {
         this.repo = repo;
@@ -129,7 +132,48 @@ public class SupportService {
 
     public List<SupportDto.MessageResponse> myThread(String email) {
         User user = getUser(email);
-        return repo.findByUserOrderByCreatedAtAsc(user).stream().map(this::toResponse).toList();
+        List<SupportMessage> msgs = repo.findByUserOrderByCreatedAtAsc(user);
+        // Opening the thread marks any admin replies as seen (so we don't nudge them).
+        List<SupportMessage> toMark = msgs.stream()
+                .filter(m -> m.isFromAdmin() && !m.isSeenByUser())
+                .peek(m -> m.setSeenByUser(true))
+                .toList();
+        if (!toMark.isEmpty()) repo.saveAll(toMark);
+        return msgs.stream().map(this::toResponse).toList();
+    }
+
+    /**
+     * Email registered users who have an admin reply they haven't opened after a
+     * few hours — a nudge to come back and read it. Guests are skipped (they already
+     * receive admin replies by email). Each unread reply is nudged at most once.
+     */
+    public void sendSupportReplyReminders() {
+        java.time.LocalDateTime cutoff = java.time.LocalDateTime.now().minusHours(6);
+        Map<UUID, List<SupportMessage>> byUser = new LinkedHashMap<>();
+        for (SupportMessage m : repo.findByFromAdminTrueAndSeenByUserFalseAndReminderSentAtIsNull()) {
+            if (m.getUser() == null) continue;                       // guests get replies by email already
+            if (m.getCreatedAt() == null || m.getCreatedAt().isAfter(cutoff)) continue; // too recent
+            byUser.computeIfAbsent(m.getUser().getId(), k -> new ArrayList<>()).add(m);
+        }
+        for (Map.Entry<UUID, List<SupportMessage>> e : byUser.entrySet()) {
+            List<SupportMessage> msgs = e.getValue();
+            User u = msgs.get(0).getUser();
+            String name = firstName(u.getUsername());
+            String body =
+                    "Hi " + name + ",\n\n" +
+                    "MindSpace support replied to your message, but it looks like you haven't seen it yet.\n\n" +
+                    "Open the app to read and reply: " + frontendUrl + "\n\n" +
+                    "— MindSpace";
+            emailAsync(u.getEmail(), "You have a reply from MindSpace support", body);
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            msgs.forEach(m -> m.setReminderSentAt(now));
+            repo.saveAll(msgs);
+        }
+    }
+
+    private String firstName(String name) {
+        if (name == null || name.isBlank()) return "there";
+        return name.trim().split("\\s+")[0];
     }
 
     // ── Admin ──

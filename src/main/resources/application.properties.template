@@ -35,6 +35,14 @@ app.backend.url=${APP_BACKEND_URL:http://localhost:8080}
 # Blank disables the endpoint. Set APP_REMINDER_TRIGGER_KEY in the environment.
 app.reminder.trigger-key=${APP_REMINDER_TRIGGER_KEY:}
 
+# ── WebRTC (online video sessions) ──
+# STUN always used. TURN added only when host+secret set (self-hosted coturn,
+# use-auth-secret). Blank host = STUN-only. See docs/coturn-setup.md.
+app.stun.url=${APP_STUN_URL:stun:stun.l.google.com:19302}
+app.turn.host=${APP_TURN_HOST:}
+app.turn.secret=${APP_TURN_SECRET:}
+app.turn.ttl=${APP_TURN_TTL:3600}
+
 spring.security.oauth2.client.registration.google.client-id=YOUR_GOOGLE_CLIENT_ID
 spring.security.oauth2.client.registration.google.client-secret=YOUR_GOOGLE_CLIENT_SECRET
 spring.security.oauth2.client.registration.google.scope=email,profile

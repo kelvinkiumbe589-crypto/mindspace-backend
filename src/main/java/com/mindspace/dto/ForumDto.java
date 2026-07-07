@@ -61,6 +61,23 @@ public class ForumDto {
         public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     }
 
+    // ── Like Response ─────────────────────────────────────────────
+    public static class LikeResponse {
+        private int likeCount;
+        private boolean liked;
+
+        public LikeResponse() {}
+        public LikeResponse(int likeCount, boolean liked) {
+            this.likeCount = likeCount;
+            this.liked = liked;
+        }
+
+        public int getLikeCount() { return likeCount; }
+        public boolean isLiked() { return liked; }
+        public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
+        public void setLiked(boolean liked) { this.liked = liked; }
+    }
+
     // ── Post Response (list view) ─────────────────────────────────
     public static class PostResponse {
         private UUID id;
@@ -69,6 +86,8 @@ public class ForumDto {
         private String author;
         private String category;
         private int replyCount;
+        private int likeCount;
+        private boolean likedByMe;
         private LocalDateTime createdAt;
 
         public UUID getId() { return id; }
@@ -77,6 +96,8 @@ public class ForumDto {
         public String getAuthor() { return author; }
         public String getCategory() { return category; }
         public int getReplyCount() { return replyCount; }
+        public int getLikeCount() { return likeCount; }
+        public boolean isLikedByMe() { return likedByMe; }
         public LocalDateTime getCreatedAt() { return createdAt; }
         public void setId(UUID id) { this.id = id; }
         public void setTitle(String title) { this.title = title; }
@@ -84,6 +105,8 @@ public class ForumDto {
         public void setAuthor(String author) { this.author = author; }
         public void setCategory(String category) { this.category = category; }
         public void setReplyCount(int replyCount) { this.replyCount = replyCount; }
+        public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
+        public void setLikedByMe(boolean likedByMe) { this.likedByMe = likedByMe; }
         public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     }
 
@@ -94,6 +117,8 @@ public class ForumDto {
         private String content;
         private String author;
         private String category;
+        private int likeCount;
+        private boolean likedByMe;
         private List<ReplyResponse> replies;
         private LocalDateTime createdAt;
 
@@ -102,6 +127,8 @@ public class ForumDto {
         public String getContent() { return content; }
         public String getAuthor() { return author; }
         public String getCategory() { return category; }
+        public int getLikeCount() { return likeCount; }
+        public boolean isLikedByMe() { return likedByMe; }
         public List<ReplyResponse> getReplies() { return replies; }
         public LocalDateTime getCreatedAt() { return createdAt; }
         public void setId(UUID id) { this.id = id; }
@@ -109,6 +136,8 @@ public class ForumDto {
         public void setContent(String content) { this.content = content; }
         public void setAuthor(String author) { this.author = author; }
         public void setCategory(String category) { this.category = category; }
+        public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
+        public void setLikedByMe(boolean likedByMe) { this.likedByMe = likedByMe; }
         public void setReplies(List<ReplyResponse> replies) { this.replies = replies; }
         public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     }

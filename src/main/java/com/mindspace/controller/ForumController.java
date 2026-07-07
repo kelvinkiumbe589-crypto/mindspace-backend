@@ -22,9 +22,12 @@ public class ForumController {
     }
 
     // GET /api/forum/posts
+    // Public, but if a valid token is sent we resolve likedByMe for the reader.
     @GetMapping("/posts")
-    public ResponseEntity<List<ForumDto.PostResponse>> getAllPosts() {
-        return ResponseEntity.ok(forumService.getAllPosts());
+    public ResponseEntity<List<ForumDto.PostResponse>> getAllPosts(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails != null ? userDetails.getUsername() : null;
+        return ResponseEntity.ok(forumService.getAllPosts(email));
     }
 
     // POST /api/forum/posts
@@ -37,8 +40,19 @@ public class ForumController {
 
     // GET /api/forum/posts/{id}
     @GetMapping("/posts/{id}")
-    public ResponseEntity<ForumDto.PostDetailResponse> getPost(@PathVariable UUID id) {
-        return ResponseEntity.ok(forumService.getPostById(id));
+    public ResponseEntity<ForumDto.PostDetailResponse> getPost(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID id) {
+        String email = userDetails != null ? userDetails.getUsername() : null;
+        return ResponseEntity.ok(forumService.getPostById(id, email));
+    }
+
+    // POST /api/forum/posts/{id}/like — toggle the signed-in user's like.
+    @PostMapping("/posts/{id}/like")
+    public ResponseEntity<ForumDto.LikeResponse> toggleLike(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(forumService.toggleLike(userDetails.getUsername(), id));
     }
 
     // POST /api/forum/posts/{id}/reply

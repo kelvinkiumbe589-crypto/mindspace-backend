@@ -59,6 +59,11 @@ public class SecurityConfig {
                         // Anyone can read the community forum; posting/replying needs an account.
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/forum/**").permitAll()
                         .requestMatchers("/api/forum/**").authenticated()
+                        // Reminder batch trigger (guarded by a shared key in the controller) and the
+                        // email unsubscribe link are public; managing the preference needs a session.
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/reminders/run").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/reminders/unsubscribe").permitAll()
+                        .requestMatchers("/api/reminders/**").authenticated()
                         .requestMatchers("/api/moods/**").authenticated()
                         .anyRequest().authenticated()
                 )

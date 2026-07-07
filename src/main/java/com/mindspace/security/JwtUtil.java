@@ -45,6 +45,31 @@ public class JwtUtil {
                 .compact();
     }
 
+    // Unsubscribe links live in emails, so they must stay valid for a long time.
+    private static final long UNSUBSCRIBE_EXPIRATION = 365L * 24 * 60 * 60 * 1000; // 1 year
+
+    /** A long-lived, single-purpose token embedded in reminder emails' unsubscribe link. */
+    public String generateUnsubscribeToken(String email) {
+        return Jwts.builder()
+                .subject(email)
+                .claim("type", "unsub")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + UNSUBSCRIBE_EXPIRATION))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    /** Returns the email for a valid unsubscribe token, or null if it's invalid/not an unsub token. */
+    public String parseUnsubscribeEmail(String token) {
+        if (token == null || token.isBlank()) return null;
+        try {
+            Claims c = parseClaims(token);
+            return "unsub".equals(c.get("type", String.class)) ? c.getSubject() : null;
+        } catch (JwtException | IllegalArgumentException e) {
+            return null;
+        }
+    }
+
     /** True if the token is a valid, unexpired device token bound to this email. */
     public boolean isTrustedDevice(String token, String email) {
         if (token == null || token.isBlank() || email == null) return false;

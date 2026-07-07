@@ -26,6 +26,15 @@ spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
 app.contact.recipient=kelvinkiumbe589@gmail.com
 
+# ── Daily mood reminder emails ──
+# Timezone the "daily" boundary is reckoned in.
+app.reminder.timezone=Africa/Nairobi
+# Public base URL of THIS backend, used to build unsubscribe links (set on Render).
+app.backend.url=${APP_BACKEND_URL:http://localhost:8080}
+# Shared secret the external cron passes as ?key=... to trigger the batch.
+# Blank disables the endpoint. Set APP_REMINDER_TRIGGER_KEY in the environment.
+app.reminder.trigger-key=${APP_REMINDER_TRIGGER_KEY:}
+
 spring.security.oauth2.client.registration.google.client-id=YOUR_GOOGLE_CLIENT_ID
 spring.security.oauth2.client.registration.google.client-secret=YOUR_GOOGLE_CLIENT_SECRET
 spring.security.oauth2.client.registration.google.scope=email,profile

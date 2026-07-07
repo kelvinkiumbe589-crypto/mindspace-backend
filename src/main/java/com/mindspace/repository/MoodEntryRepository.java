@@ -11,4 +11,8 @@ import java.util.UUID;
 @Repository
 public interface MoodEntryRepository extends JpaRepository<MoodEntry, UUID> {
     List<MoodEntry> findByUserOrderByLoggedAtDesc(User user);
+
+    // Bounded fetch for streak computation — 90 recent entries is more than enough
+    // to measure a consecutive-day streak without loading a user's whole history.
+    List<MoodEntry> findTop90ByUserOrderByLoggedAtDesc(User user);
 }

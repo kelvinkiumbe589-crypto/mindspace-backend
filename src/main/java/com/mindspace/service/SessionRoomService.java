@@ -8,13 +8,19 @@ import com.mindspace.repository.BookingRepository;
 import com.mindspace.repository.TherapistProfileRepository;
 import com.mindspace.repository.UserRepository;
 import com.mindspace.security.JwtUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -59,12 +65,26 @@ public class SessionRoomService {
     @Value("${app.turn.credential:}")
     private String turnCredential;
 
+    // Metered (managed TURN via API key). Domain e.g. mindspace1.metered.live
+    @Value("${app.metered.domain:}")
+    private String meteredDomain;
+
+    @Value("${app.metered.api-key:}")
+    private String meteredApiKey;
+
+    private static final Logger log = LoggerFactory.getLogger(SessionRoomService.class);
+    private final RestClient rest;
+
     public SessionRoomService(BookingRepository bookingRepo, UserRepository userRepository,
                               TherapistProfileRepository profileRepo, JwtUtil jwtUtil) {
         this.bookingRepo = bookingRepo;
         this.userRepository = userRepository;
         this.profileRepo = profileRepo;
         this.jwtUtil = jwtUtil;
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout((int) Duration.ofSeconds(5).toMillis());
+        factory.setReadTimeout((int) Duration.ofSeconds(6).toMillis());
+        this.rest = RestClient.builder().requestFactory(factory).build();
     }
 
     public record Participant(String bookingId, String role, String counterpartyName) {}
@@ -113,7 +133,17 @@ public class SessionRoomService {
         stun.put("urls", stunUrl);
         servers.add(stun);
 
-        // Preferred: managed TURN with static credentials (Metered, Twilio, etc.).
+        // Preferred: Metered managed TURN — fetch fresh time-limited creds via API key.
+        if (notBlank(meteredDomain) && notBlank(meteredApiKey)) {
+            List<Map<String, Object>> metered = fetchMeteredIceServers();
+            if (metered != null && !metered.isEmpty()) {
+                servers.addAll(metered);
+                return Map.of("iceServers", servers);
+            }
+            // else fall through to any other configured option / STUN-only
+        }
+
+        // Managed TURN with static credentials (Twilio, self-managed, etc.).
         if (notBlank(turnUrls) && notBlank(turnUsername) && notBlank(turnCredential)) {
             List<String> urls = Arrays.stream(turnUrls.split(","))
                     .map(String::trim).filter(u -> !u.isEmpty()).toList();
@@ -136,6 +166,18 @@ public class SessionRoomService {
             servers.add(turn);
         }
         return Map.of("iceServers", servers);
+    }
+
+    // Metered returns a ready-made array of ICE servers with fresh, time-limited creds.
+    private List<Map<String, Object>> fetchMeteredIceServers() {
+        try {
+            String url = "https://" + meteredDomain + "/api/v1/turn/credentials?apiKey=" + meteredApiKey;
+            return rest.get().uri(url).retrieve()
+                    .body(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+        } catch (Exception e) {
+            log.warn("Metered TURN fetch failed: {}", e.getMessage());
+            return null;
+        }
     }
 
     private boolean notBlank(String s) { return s != null && !s.isBlank(); }

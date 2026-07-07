@@ -104,7 +104,7 @@ public class SupportService {
     }
 
     private SupportDto.MessageResponse toResponse(SupportMessage m) {
-        return new SupportDto.MessageResponse(m.getId(), m.getText(), m.isFromAdmin(), m.getCreatedAt());
+        return new SupportDto.MessageResponse(m.getId(), m.getText(), m.isFromAdmin(), m.isSeenByUser(), m.getCreatedAt());
     }
 
     public SupportDto.MessageResponse sendUserMessage(String email, String text) {

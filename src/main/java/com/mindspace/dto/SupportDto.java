@@ -36,18 +36,21 @@ public class SupportDto {
         private UUID id;
         private String text;
         private boolean fromAdmin;
+        private boolean seen; // for admin messages: has the user opened it?
         private LocalDateTime createdAt;
 
-        public MessageResponse(UUID id, String text, boolean fromAdmin, LocalDateTime createdAt) {
+        public MessageResponse(UUID id, String text, boolean fromAdmin, boolean seen, LocalDateTime createdAt) {
             this.id = id;
             this.text = text;
             this.fromAdmin = fromAdmin;
+            this.seen = seen;
             this.createdAt = createdAt;
         }
 
         public UUID getId() { return id; }
         public String getText() { return text; }
         public boolean isFromAdmin() { return fromAdmin; }
+        public boolean isSeen() { return seen; }
         public LocalDateTime getCreatedAt() { return createdAt; }
     }
 

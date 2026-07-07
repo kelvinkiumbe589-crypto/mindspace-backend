@@ -7,12 +7,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Sends plain-text email. Prefers Brevo's HTTPS API (works from hosts that block
@@ -41,6 +43,14 @@ public class MailService {
 
     public MailService(ObjectProvider<JavaMailSender> mailSenderProvider) {
         this.mailSender = mailSenderProvider.getIfAvailable();
+        // Bounded SMTP timeouts so a blocked port (e.g. Render blocks 587) fails fast and
+        // falls back cleanly, instead of hanging the request/worker thread for minutes.
+        if (this.mailSender instanceof JavaMailSenderImpl impl) {
+            Properties props = impl.getJavaMailProperties();
+            props.put("mail.smtp.connectiontimeout", "6000");
+            props.put("mail.smtp.timeout", "6000");
+            props.put("mail.smtp.writetimeout", "6000");
+        }
         // Bounded timeouts so a slow/blocked mail provider can never hang a request thread.
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout((int) Duration.ofSeconds(8).toMillis());

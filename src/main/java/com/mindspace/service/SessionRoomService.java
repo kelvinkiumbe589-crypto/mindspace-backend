@@ -16,6 +16,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,14 +39,25 @@ public class SessionRoomService {
     @Value("${app.stun.url:stun:stun.l.google.com:19302}")
     private String stunUrl;
 
-    @Value("${app.turn.host:}")        // e.g. turn.mindspace.example — blank disables TURN
+    @Value("${app.turn.host:}")        // self-hosted coturn host — blank disables this path
     private String turnHost;
 
     @Value("${app.turn.secret:}")      // coturn static-auth-secret
     private String turnSecret;
 
     @Value("${app.turn.ttl:3600}")     // seconds the TURN credential is valid
+
     private long turnTtl;
+
+    // Managed TURN (e.g. Metered): static credentials, no server to run.
+    @Value("${app.turn.urls:}")        // comma-separated turn:/turns: URLs
+    private String turnUrls;
+
+    @Value("${app.turn.username:}")
+    private String turnUsername;
+
+    @Value("${app.turn.credential:}")
+    private String turnCredential;
 
     public SessionRoomService(BookingRepository bookingRepo, UserRepository userRepository,
                               TherapistProfileRepository profileRepo, JwtUtil jwtUtil) {
@@ -101,7 +113,16 @@ public class SessionRoomService {
         stun.put("urls", stunUrl);
         servers.add(stun);
 
-        if (turnHost != null && !turnHost.isBlank() && turnSecret != null && !turnSecret.isBlank()) {
+        // Preferred: managed TURN with static credentials (Metered, Twilio, etc.).
+        if (notBlank(turnUrls) && notBlank(turnUsername) && notBlank(turnCredential)) {
+            List<String> urls = Arrays.stream(turnUrls.split(","))
+                    .map(String::trim).filter(u -> !u.isEmpty()).toList();
+            Map<String, Object> turn = new LinkedHashMap<>();
+            turn.put("urls", urls);
+            turn.put("username", turnUsername);
+            turn.put("credential", turnCredential);
+            servers.add(turn);
+        } else if (notBlank(turnHost) && notBlank(turnSecret)) {
             long expiry = (System.currentTimeMillis() / 1000L) + turnTtl;
             String username = expiry + ":mindspace";
             String credential = hmacSha1Base64(turnSecret, username);
@@ -116,6 +137,8 @@ public class SessionRoomService {
         }
         return Map.of("iceServers", servers);
     }
+
+    private boolean notBlank(String s) { return s != null && !s.isBlank(); }
 
     private String hmacSha1Base64(String secret, String data) {
         try {

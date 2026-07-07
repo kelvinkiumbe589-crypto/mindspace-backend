@@ -39,6 +39,11 @@ app.reminder.trigger-key=${APP_REMINDER_TRIGGER_KEY:}
 # STUN always used. TURN added only when host+secret set (self-hosted coturn,
 # use-auth-secret). Blank host = STUN-only. See docs/coturn-setup.md.
 app.stun.url=${APP_STUN_URL:stun:stun.l.google.com:19302}
+# Managed TURN (e.g. Metered) — static credentials, no server to run.
+app.turn.urls=${APP_TURN_URLS:}
+app.turn.username=${APP_TURN_USERNAME:}
+app.turn.credential=${APP_TURN_CREDENTIAL:}
+# OR self-hosted coturn (used only if the managed vars above are blank).
 app.turn.host=${APP_TURN_HOST:}
 app.turn.secret=${APP_TURN_SECRET:}
 app.turn.ttl=${APP_TURN_TTL:3600}

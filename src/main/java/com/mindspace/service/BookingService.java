@@ -181,6 +181,11 @@ public class BookingService {
         return b;
     }
 
+    private String firstName(String name) {
+        if (name == null || name.isBlank()) return "Client";
+        return name.trim().split("\\s+")[0];
+    }
+
     private LocalDateTime parseWhen(String iso) {
         if (iso == null || iso.isBlank()) return null;
         try {
@@ -197,8 +202,9 @@ public class BookingService {
         r.therapistId = b.getTherapist().getId().toString();
         r.therapistName = profileRepo.findByUserId(b.getTherapist().getId())
                 .map(TherapistProfile::getName).orElse(b.getTherapist().getUsername());
-        r.clientName = b.getClient().getUsername();
-        r.clientEmail = b.getClient().getEmail();
+        // Privacy: the therapist sees the client by first name only, never their email.
+        r.clientName = firstName(b.getClient().getUsername());
+        r.clientEmail = null;
         r.sessionType = b.getSessionType();
         r.amount = b.getAmount();
         // scheduledAt is the user-picked wall-clock time — keep it naive (no zone).

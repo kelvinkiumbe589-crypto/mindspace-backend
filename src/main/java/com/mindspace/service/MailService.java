@@ -88,6 +88,38 @@ public class MailService {
         return false;
     }
 
+    /**
+     * Fire-and-forget welcome email for a newly registered user. Runs on a daemon
+     * thread so email latency never delays the signup response, and never throws —
+     * a mail failure must not break account creation.
+     */
+    public void sendWelcomeAsync(String toEmail, String username) {
+        if (toEmail == null || toEmail.isBlank()) return;
+        String name = (username == null || username.isBlank()) ? "there" : username;
+        String subject = "Welcome to MindSpace 🧠";
+        String text =
+                "Hi " + name + ",\n\n" +
+                "Welcome to MindSpace — we're really glad you're here.\n\n" +
+                "MindSpace is your calm, private space to track your mood, understand your " +
+                "patterns, get gentle AI insights, connect with a supportive community, and " +
+                "reach a licensed therapist whenever you need one.\n\n" +
+                "A good way to start:\n" +
+                "  1. Log how you're feeling today\n" +
+                "  2. Ask the AI assistant for a quick insight\n" +
+                "  3. Explore the community forum\n\n" +
+                "Take care of yourself,\n" +
+                "The MindSpace team\n";
+        Thread t = new Thread(() -> {
+            try {
+                send(toEmail, subject, text);
+            } catch (Exception ignored) {
+                // never let a mail failure affect the created account
+            }
+        }, "welcome-email");
+        t.setDaemon(true);
+        t.start();
+    }
+
     private void sendViaBrevo(String to, String subject, String text) {
         Map<String, Object> body = Map.of(
                 "sender", Map.of("name", brevoSenderName, "email", senderEmail()),

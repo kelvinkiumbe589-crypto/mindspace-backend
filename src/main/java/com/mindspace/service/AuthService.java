@@ -24,6 +24,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
     private final OtpService otpService;
+    private final MailService mailService;
 
     @Value("${app.admin.emails:}")
     private String adminEmails;
@@ -37,12 +38,14 @@ public class AuthService {
                        PasswordEncoder passwordEncoder,
                        JwtUtil jwtUtil,
                        AuthenticationManager authenticationManager,
-                       OtpService otpService) {
+                       OtpService otpService,
+                       MailService mailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.authenticationManager = authenticationManager;
         this.otpService = otpService;
+        this.mailService = mailService;
     }
 
     private EmailOtp.Purpose parsePurpose(String purpose) {
@@ -89,6 +92,7 @@ public class AuthService {
                     .role(User.Role.USER)
                     .build();
             userRepository.save(user);
+            mailService.sendWelcomeAsync(user.getEmail(), user.getUsername());
             return issueToken(user);
         }
         otpService.issue(request.getEmail(), EmailOtp.Purpose.REGISTER,
@@ -147,6 +151,7 @@ public class AuthService {
                     .role(User.Role.USER)
                     .build();
             userRepository.save(user);
+            mailService.sendWelcomeAsync(user.getEmail(), user.getUsername());
         } else {
             user = userRepository.findByEmail(otp.getEmail())
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));

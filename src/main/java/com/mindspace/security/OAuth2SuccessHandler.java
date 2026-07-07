@@ -2,6 +2,7 @@ package com.mindspace.security;
 
 import com.mindspace.model.User;
 import com.mindspace.repository.UserRepository;
+import com.mindspace.service.MailService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,6 +23,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final MailService mailService;
     // Local encoder avoids a bean cycle (PasswordEncoder is defined in SecurityConfig,
     // which itself depends on this handler). The value is a throwaway — OAuth users log in via Google.
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -30,9 +32,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
-    public OAuth2SuccessHandler(JwtUtil jwtUtil, UserRepository userRepository) {
+    public OAuth2SuccessHandler(JwtUtil jwtUtil, UserRepository userRepository, MailService mailService) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.mailService = mailService;
     }
 
     @Override
@@ -45,16 +48,18 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         String token = "";
         if (email != null && !email.isBlank()) {
-            // Ensure a User row exists so moods/support can attach to it, then issue a JWT
-            userRepository.findByEmail(email).orElseGet(() -> {
+            // Ensure a User row exists so moods/support can attach to it, then issue a JWT.
+            // New Google users get a welcome email, just like email/password signups.
+            if (userRepository.findByEmail(email).isEmpty()) {
                 User u = User.builder()
                         .username(uniqueUsername(name, email))
                         .email(email)
                         .passwordHash(passwordEncoder.encode("oauth2:" + UUID.randomUUID()))
                         .role(User.Role.USER)
                         .build();
-                return userRepository.save(u);
-            });
+                User created = userRepository.save(u);
+                mailService.sendWelcomeAsync(created.getEmail(), created.getUsername());
+            }
             token = jwtUtil.generateToken(email);
         }
 

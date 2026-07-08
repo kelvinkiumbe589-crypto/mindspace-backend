@@ -14,8 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,6 +33,18 @@ public class TelegramService {
 
     private static final Logger log = LoggerFactory.getLogger(TelegramService.class);
     private static final Pattern SCORE = Pattern.compile("\\b(10|[1-9])\\b");
+    private static final String[] TIPS = {
+            "Take three slow breaths — in for 4, hold for 4, out for 6. 🌬️",
+            "Name one thing you're grateful for right now. 🙏",
+            "Stand up and stretch for 30 seconds. Your body carries your mood. 🧘",
+            "Drink a glass of water — low hydration quietly lowers mood. 💧",
+            "Text someone you care about. Connection is medicine. 💜",
+            "Step outside for 2 minutes. Daylight resets your rhythm. ☀️",
+            "Write down one worry, then one small next step for it. 📝",
+            "Unclench your jaw and drop your shoulders. Notice the tension leave. 😌",
+            "Do one tiny task you've been avoiding — momentum lifts mood. ✅",
+            "Be as kind to yourself as you'd be to a good friend. 🫶",
+    };
 
     @Value("${app.telegram.bot-token:}")
     private String botToken;
@@ -84,13 +101,28 @@ public class TelegramService {
                 return;
             }
             if (text.equalsIgnoreCase("/help")) {
-                sendMessage(chatId, "Log your mood by texting a score 1–10 and a note, e.g.\n\n\"mood 7 feeling calm\"\n\nConnect your account first from MindSpace → Settings → Connect Telegram.");
+                sendMessage(chatId, "Here's what I can do:\n\n"
+                        + "• Log a mood — text a score 1–10 and a note, e.g. \"mood 7 feeling calm\"\n"
+                        + "• /streak — see your check-in streak\n"
+                        + "• /tip — a quick wellness tip\n\n"
+                        + "Connect your account first from MindSpace → Settings → Connect Telegram.");
+                return;
+            }
+            if (text.equalsIgnoreCase("/tip")) {
+                sendMessage(chatId, "💡 " + TIPS[ThreadLocalRandom.current().nextInt(TIPS.length)]);
                 return;
             }
 
             User user = userRepository.findByTelegramChatId(chatId).orElse(null);
             if (user == null) {
                 sendMessage(chatId, "Please connect your account first: open MindSpace → Settings → Connect Telegram.");
+                return;
+            }
+            if (text.equalsIgnoreCase("/streak")) {
+                int s = computeStreak(user);
+                sendMessage(chatId, s > 0
+                        ? "🔥 You're on a " + s + "-day check-in streak! Keep it going."
+                        : "No streak yet — log how you feel today to start one 🌱");
                 return;
             }
             Integer score = firstScore(text);
@@ -118,6 +150,40 @@ public class TelegramService {
         userRepository.save(u);
         String name = u.getUsername() == null ? "there" : u.getUsername().split("\\s+")[0];
         sendMessage(chatId, "✅ Connected, " + name + "! You can now log your mood here — just text e.g. \"mood 7 feeling hopeful\".");
+    }
+
+    // Consecutive days (ending today or yesterday) with at least one mood entry.
+    private int computeStreak(User user) {
+        Set<LocalDate> days = new HashSet<>();
+        for (MoodEntry e : moodEntryRepository.findTop90ByUserOrderByLoggedAtDesc(user)) {
+            if (e.getLoggedAt() != null) days.add(e.getLoggedAt().toLocalDate());
+        }
+        LocalDate today = LocalDate.now();
+        LocalDate cursor = days.contains(today) ? today : today.minusDays(1);
+        int streak = 0;
+        while (days.contains(cursor)) { streak++; cursor = cursor.minusDays(1); }
+        return streak;
+    }
+
+    /**
+     * Daily "how are you feeling?" nudge to connected Telegram users. Shares the
+     * once-a-day guard (lastReminderDate) so a user isn't emailed AND messaged the
+     * same day. Called from the daily reminder batch. Returns how many were sent.
+     */
+    @Transactional
+    public int sendDailyCheckins() {
+        if (!isConfigured()) return 0;
+        LocalDate today = LocalDate.now();
+        int sent = 0;
+        for (User u : userRepository.findByTelegramChatIdIsNotNull()) {
+            if (today.equals(u.getLastReminderDate())) continue;
+            sendMessage(u.getTelegramChatId(),
+                    "👋 How are you feeling today? Reply with a score 1–10 and a note, e.g. \"mood 7 feeling calm\". (/tip for a quick idea)");
+            u.setLastReminderDate(today);
+            userRepository.save(u);
+            sent++;
+        }
+        return sent;
     }
 
     private Integer firstScore(String text) {

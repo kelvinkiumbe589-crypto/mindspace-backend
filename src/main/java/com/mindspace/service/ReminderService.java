@@ -35,6 +35,7 @@ public class ReminderService {
     private final MailService mailService;
     private final JwtUtil jwtUtil;
     private final SupportService supportService;
+    private final TelegramService telegramService;
 
     // Only one batch may run at a time (guards against overlapping cron calls).
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -49,12 +50,14 @@ public class ReminderService {
     private String backendUrl;
 
     public ReminderService(UserRepository userRepository, MoodEntryRepository moodEntryRepository,
-                           MailService mailService, JwtUtil jwtUtil, SupportService supportService) {
+                           MailService mailService, JwtUtil jwtUtil, SupportService supportService,
+                           TelegramService telegramService) {
         this.userRepository = userRepository;
         this.moodEntryRepository = moodEntryRepository;
         this.mailService = mailService;
         this.jwtUtil = jwtUtil;
         this.supportService = supportService;
+        this.telegramService = telegramService;
     }
 
     /**
@@ -81,6 +84,16 @@ public class ReminderService {
     private void runBatch() {
         ZoneId zone = resolveZone();
         LocalDate today = LocalDate.now(zone);
+
+        // Telegram-connected users get their daily check-in there (runs first, so the
+        // shared once-a-day guard then skips their reminder email).
+        try {
+            int tg = telegramService.sendDailyCheckins();
+            if (tg > 0) log.info("Telegram daily check-ins sent: {}", tg);
+        } catch (Exception e) {
+            log.warn("Telegram check-ins failed: {}", e.getMessage());
+        }
+
         List<User> recipients = userRepository.findByRoleAndMoodReminderEnabledTrue(User.Role.USER);
 
         int sent = 0, skipped = 0, failed = 0;

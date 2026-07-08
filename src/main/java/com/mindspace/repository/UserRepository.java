@@ -23,4 +23,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     // Telegram bot linking.
     Optional<User> findByTelegramLinkCode(String telegramLinkCode);
     Optional<User> findByTelegramChatId(Long telegramChatId);
+    List<User> findByTelegramChatIdIsNotNull();
 }

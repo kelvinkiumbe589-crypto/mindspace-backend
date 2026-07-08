@@ -32,7 +32,9 @@ public class WebPushService {
 
     static { Security.addProvider(new BouncyCastleProvider()); }
 
-    @Value("${app.push.vapid.public:}")
+    // Public key is safe to embed (it's sent to browsers anyway). The matching
+    // private key must be provided via APP_PUSH_VAPID_PRIVATE for sending to work.
+    @Value("${app.push.vapid.public:BCMf-4f87vb9tNQwjogXHHMlT1QAyry6EkYOo3jv-6s4uT9hVK4kM8nMvKBlIHmNZBaamGX7w3G6aLb7Kz90DoY}")
     private String vapidPublic;
 
     @Value("${app.push.vapid.private:}")

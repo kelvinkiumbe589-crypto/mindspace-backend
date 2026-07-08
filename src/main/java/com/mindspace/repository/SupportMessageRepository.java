@@ -18,4 +18,7 @@ public interface SupportMessageRepository extends JpaRepository<SupportMessage, 
 
     // Admin replies a user hasn't opened and we haven't nudged them about yet.
     List<SupportMessage> findByFromAdminTrueAndSeenByUserFalseAndReminderSentAtIsNull();
+
+    // Any admin reply we've never nudged about — used for a one-time catch-up.
+    List<SupportMessage> findByFromAdminTrueAndReminderSentAtIsNull();
 }

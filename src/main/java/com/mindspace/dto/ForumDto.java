@@ -91,6 +91,7 @@ public class ForumDto {
         private int replyCount;
         private int likeCount;
         private boolean likedByMe;
+        private boolean mine; // true if the caller wrote it (can edit/delete)
         private LocalDateTime createdAt;
 
         public UUID getId() { return id; }
@@ -101,6 +102,7 @@ public class ForumDto {
         public int getReplyCount() { return replyCount; }
         public int getLikeCount() { return likeCount; }
         public boolean isLikedByMe() { return likedByMe; }
+        public boolean isMine() { return mine; }
         public LocalDateTime getCreatedAt() { return createdAt; }
         public void setId(UUID id) { this.id = id; }
         public void setTitle(String title) { this.title = title; }
@@ -110,6 +112,7 @@ public class ForumDto {
         public void setReplyCount(int replyCount) { this.replyCount = replyCount; }
         public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
         public void setLikedByMe(boolean likedByMe) { this.likedByMe = likedByMe; }
+        public void setMine(boolean mine) { this.mine = mine; }
         public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     }
 

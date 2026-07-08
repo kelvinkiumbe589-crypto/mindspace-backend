@@ -207,8 +207,39 @@ public class ForumService {
         response.setReplyCount(post.getReplies() != null ? post.getReplies().size() : 0);
         response.setLikeCount((int) forumPostLikeRepository.countByPost(post));
         response.setLikedByMe(currentUser != null && forumPostLikeRepository.existsByPostAndUser(post, currentUser));
+        response.setMine(currentUser != null && post.getUser() != null
+                && post.getUser().getId().equals(currentUser.getId()));
         response.setCreatedAt(post.getCreatedAt());
         return response;
+    }
+
+    // ── Edit / delete your own post ───────────────────────────────
+    @Transactional
+    public ForumDto.PostResponse editPost(String email, UUID postId, ForumDto.CreatePostRequest req) {
+        User user = getUser(email);
+        ForumPost post = forumPostRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post not found"));
+        requirePostOwner(post, user);
+        post.setTitle(req.getTitle());
+        post.setContent(req.getContent());
+        if (req.getCategory() != null && !req.getCategory().isBlank()) post.setCategory(req.getCategory());
+        return toPostResponse(forumPostRepository.save(post), user);
+    }
+
+    @Transactional
+    public void deletePost(String email, UUID postId) {
+        User user = getUser(email);
+        ForumPost post = forumPostRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Post not found"));
+        requirePostOwner(post, user);
+        forumPostLikeRepository.deleteByPost(post); // likes aren't cascaded
+        forumPostRepository.delete(post);           // replies cascade
+    }
+
+    private void requirePostOwner(ForumPost post, User user) {
+        if (post.getUser() == null || !post.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("You can only edit or delete your own post.");
+        }
     }
 
     private ForumDto.ReplyResponse toReplyResponse(ForumReply reply, User currentUser) {

@@ -64,6 +64,24 @@ public class ForumController {
         return ResponseEntity.ok(forumService.replyToPost(userDetails.getUsername(), id, request));
     }
 
+    // PUT /api/forum/posts/{id} — edit your own post
+    @PutMapping("/posts/{id}")
+    public ResponseEntity<ForumDto.PostResponse> editPost(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID id,
+            @Valid @RequestBody ForumDto.CreatePostRequest request) {
+        return ResponseEntity.ok(forumService.editPost(userDetails.getUsername(), id, request));
+    }
+
+    // DELETE /api/forum/posts/{id} — delete your own post
+    @DeleteMapping("/posts/{id}")
+    public ResponseEntity<java.util.Map<String, Object>> deletePost(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID id) {
+        forumService.deletePost(userDetails.getUsername(), id);
+        return ResponseEntity.ok(java.util.Map.of("deleted", true));
+    }
+
     // PUT /api/forum/replies/{id} — edit your own comment
     @PutMapping("/replies/{id}")
     public ResponseEntity<ForumDto.ReplyResponse> editReply(

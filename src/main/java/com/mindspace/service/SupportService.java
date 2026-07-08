@@ -148,9 +148,22 @@ public class SupportService {
      * receive admin replies by email). Each unread reply is nudged at most once.
      */
     public void sendSupportReplyReminders() {
+        remind(repo.findByFromAdminTrueAndSeenByUserFalseAndReminderSentAtIsNull());
+    }
+
+    /**
+     * One-time catch-up: nudge everyone who has an admin reply we've never reminded
+     * them about, regardless of the (previously backfilled) seen flag. Returns the
+     * number of users emailed. Safe to run more than once — reminded replies are skipped.
+     */
+    public int catchUpSupportReminders() {
+        return remind(repo.findByFromAdminTrueAndReminderSentAtIsNull());
+    }
+
+    private int remind(List<SupportMessage> candidates) {
         java.time.LocalDateTime cutoff = java.time.LocalDateTime.now().minusHours(6);
         Map<UUID, List<SupportMessage>> byUser = new LinkedHashMap<>();
-        for (SupportMessage m : repo.findByFromAdminTrueAndSeenByUserFalseAndReminderSentAtIsNull()) {
+        for (SupportMessage m : candidates) {
             if (m.getUser() == null) continue;                       // guests get replies by email already
             if (m.getCreatedAt() == null || m.getCreatedAt().isAfter(cutoff)) continue; // too recent
             byUser.computeIfAbsent(m.getUser().getId(), k -> new ArrayList<>()).add(m);
@@ -158,9 +171,8 @@ public class SupportService {
         for (Map.Entry<UUID, List<SupportMessage>> e : byUser.entrySet()) {
             List<SupportMessage> msgs = e.getValue();
             User u = msgs.get(0).getUser();
-            String name = firstName(u.getUsername());
             String body =
-                    "Hi " + name + ",\n\n" +
+                    "Hi " + firstName(u.getUsername()) + ",\n\n" +
                     "MindSpace support replied to your message, but it looks like you haven't seen it yet.\n\n" +
                     "Open the app to read and reply: " + frontendUrl + "\n\n" +
                     "— MindSpace";
@@ -169,6 +181,7 @@ public class SupportService {
             msgs.forEach(m -> m.setReminderSentAt(now));
             repo.saveAll(msgs);
         }
+        return byUser.size();
     }
 
     private String firstName(String name) {

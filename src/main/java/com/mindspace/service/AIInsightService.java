@@ -67,12 +67,14 @@ public class AIInsightService {
         }
 
         // Conversation: system + recent turns + the new message, so follow-ups
-        // like "yeah" have context and it doesn't restate the mood recap each time.
+        // like "yeah" have context. We deliberately do NOT feed the mood summary
+        // here — it made the assistant open every reply by recapping the user's
+        // moods. Mood analysis lives in the separate proactive "insight" feature.
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "system", "content",
-                SYSTEM + "\n\nBackground — the user's recent moods (use ONLY if they ask or it's clearly "
-                + "relevant; do NOT restate this or open replies by describing their mood):\n" + context
-                + "\n\nAnswer the user's latest message directly and keep the conversation flowing naturally."));
+                SYSTEM + "\n\nAnswer the user's latest message directly and keep the conversation flowing "
+                + "naturally. Be brief. Do NOT open your reply by describing or recapping the user's mood, "
+                + "tiredness or symptoms unless they explicitly bring it up in their latest message."));
         if (history != null) {
             int start = Math.max(0, history.size() - 8); // keep the last ~8 turns
             for (int i = start; i < history.size(); i++) {

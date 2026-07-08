@@ -24,4 +24,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByTelegramLinkCode(String telegramLinkCode);
     Optional<User> findByTelegramChatId(Long telegramChatId);
     List<User> findByTelegramChatIdIsNotNull();
+
+    // Referrals.
+    Optional<User> findByReferralCode(String referralCode);
+    long countByReferredBy(UUID referredBy);
 }

@@ -90,6 +90,19 @@ public class AIInsightService {
         return generateChat(messages);
     }
 
+    /** A richer, longer personalised analysis — the "AI Deep-Dive" perk. */
+    public String deepDive(String moodContext) {
+        String context = (moodContext == null || moodContext.isBlank())
+                ? "The user has not logged many moods yet."
+                : moodContext.length() > 5000 ? moodContext.substring(0, 5000) : moodContext;
+        String prompt = SYSTEM + "\n\n"
+                + "Give the user a thorough, warm \"deep-dive\" reflection on their recent moods below "
+                + "(about 3 short paragraphs). Cover: (1) the patterns and possible triggers you notice, "
+                + "(2) what seems to lift them up, and (3) a concrete, gentle 3-step plan for the week ahead. "
+                + "Encouraging and human, not clinical. Do not diagnose.\n\nRecent moods:\n" + context;
+        return generate(prompt);
+    }
+
     /** Use Groq if configured (reliable from servers), otherwise Gemini. */
     private String generate(String prompt) {
         if (groqApiKey != null && !groqApiKey.isBlank()) {

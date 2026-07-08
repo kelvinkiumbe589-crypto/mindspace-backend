@@ -53,6 +53,17 @@ public class User {
     @Column(name = "telegram_link_code", length = 40)
     private String telegramLinkCode;
 
+    // Referral program: this user's own invite code, who invited them, and how
+    // many AI deep-dive credits they've earned.
+    @Column(name = "referral_code", length = 20, unique = true)
+    private String referralCode;
+
+    @Column(name = "referred_by")
+    private UUID referredBy;
+
+    @Column(name = "ai_credits", nullable = false, columnDefinition = "integer default 3")
+    private int aiCredits = 3;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -73,6 +84,9 @@ public class User {
     public LocalDate getLastReminderDate() { return lastReminderDate; }
     public Long getTelegramChatId() { return telegramChatId; }
     public String getTelegramLinkCode() { return telegramLinkCode; }
+    public String getReferralCode() { return referralCode; }
+    public UUID getReferredBy() { return referredBy; }
+    public int getAiCredits() { return aiCredits; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
     // Setters
@@ -85,6 +99,9 @@ public class User {
     public void setLastReminderDate(LocalDate lastReminderDate) { this.lastReminderDate = lastReminderDate; }
     public void setTelegramChatId(Long telegramChatId) { this.telegramChatId = telegramChatId; }
     public void setTelegramLinkCode(String telegramLinkCode) { this.telegramLinkCode = telegramLinkCode; }
+    public void setReferralCode(String referralCode) { this.referralCode = referralCode; }
+    public void setReferredBy(UUID referredBy) { this.referredBy = referredBy; }
+    public void setAiCredits(int aiCredits) { this.aiCredits = aiCredits; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     // Builder

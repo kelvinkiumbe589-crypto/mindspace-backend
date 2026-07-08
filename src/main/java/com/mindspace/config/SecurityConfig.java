@@ -44,6 +44,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        // The AI deep-dive is a signed-in perk (spends referral credits).
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/ai/deep-dive").authenticated()
                         .requestMatchers("/api/ai/**").permitAll()
                         .requestMatchers("/api/contact").permitAll()
                         .requestMatchers("/api/payments/**").permitAll()

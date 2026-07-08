@@ -1,5 +1,6 @@
 package com.mindspace.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import com.mindspace.dto.AiChatDto;
 import com.mindspace.dto.MoodDto;
 import com.mindspace.model.MoodEntry;
 import com.mindspace.repository.MoodEntryRepository;
@@ -50,25 +52,40 @@ public class AIInsightService {
      * recent moods and an optional question, returns a Gemini reply. When the
      * question is blank it produces a proactive wellness insight instead.
      */
-    public String assistantReply(String moodContext, String question) {
+    public String assistantReply(String moodContext, String question, List<AiChatDto.Turn> history) {
         String context = (moodContext == null || moodContext.isBlank())
                 ? "The user has not logged any moods yet."
                 : moodContext.length() > 4000 ? moodContext.substring(0, 4000) : moodContext;
 
-        String prompt;
+        // Blank question → one-off proactive insight.
         if (question == null || question.isBlank()) {
-            prompt = SYSTEM + "\n\n"
+            String prompt = SYSTEM + "\n\n"
                     + "Based on the user's recent mood entries below, give a short, warm, personalised insight "
                     + "(3-4 sentences). Point out one pattern you notice, offer one practical tip, and end with "
                     + "encouragement.\n\nRecent moods:\n" + context;
-        } else {
-            String q = question.length() > 1000 ? question.substring(0, 1000) : question;
-            prompt = SYSTEM + "\n\n"
-                    + "Use the user's recent mood entries as context, then answer their question in a warm, "
-                    + "supportive and practical way (keep it concise), following the rules above.\n\n"
-                    + "Recent moods:\n" + context + "\n\nUser question: " + q;
+            return generate(prompt);
         }
-        return generate(prompt);
+
+        // Conversation: system + recent turns + the new message, so follow-ups
+        // like "yeah" have context and it doesn't restate the mood recap each time.
+        List<Map<String, String>> messages = new ArrayList<>();
+        messages.add(Map.of("role", "system", "content",
+                SYSTEM + "\n\nBackground — the user's recent moods (use ONLY if they ask or it's clearly "
+                + "relevant; do NOT restate this or open replies by describing their mood):\n" + context
+                + "\n\nAnswer the user's latest message directly and keep the conversation flowing naturally."));
+        if (history != null) {
+            int start = Math.max(0, history.size() - 8); // keep the last ~8 turns
+            for (int i = start; i < history.size(); i++) {
+                AiChatDto.Turn t = history.get(i);
+                if (t == null || t.getText() == null || t.getText().isBlank()) continue;
+                String role = "user".equalsIgnoreCase(t.getRole()) ? "user" : "assistant";
+                String txt = t.getText().length() > 1000 ? t.getText().substring(0, 1000) : t.getText();
+                messages.add(Map.of("role", role, "content", txt));
+            }
+        }
+        String q = question.length() > 1000 ? question.substring(0, 1000) : question;
+        messages.add(Map.of("role", "user", "content", q));
+        return generateChat(messages);
     }
 
     /** Use Groq if configured (reliable from servers), otherwise Gemini. */
@@ -77,6 +94,79 @@ public class AIInsightService {
             return callGroq(prompt);
         }
         return callGeminiAPI(prompt);
+    }
+
+    /** Multi-turn variant: messages are {role: system|user|assistant, content}. */
+    private String generateChat(List<Map<String, String>> messages) {
+        if (groqApiKey != null && !groqApiKey.isBlank()) {
+            return callGroqChat(messages);
+        }
+        return callGeminiChat(messages);
+    }
+
+    @SuppressWarnings("unchecked")
+    private String callGroqChat(List<Map<String, String>> messages) {
+        try {
+            Map<String, Object> requestBody = Map.of(
+                    "model", "llama-3.3-70b-versatile",
+                    "messages", messages);
+            Map<String, Object> response = restClient.post()
+                    .uri("https://api.groq.com/openai/v1/chat/completions")
+                    .header("Authorization", "Bearer " + groqApiKey)
+                    .header("Content-Type", "application/json")
+                    .body(requestBody)
+                    .retrieve()
+                    .body(Map.class);
+            if (response != null && response.containsKey("choices")) {
+                List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
+                if (!choices.isEmpty()) {
+                    Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+                    if (message != null && message.get("content") != null) return (String) message.get("content");
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Groq chat error: " + e.getMessage());
+        }
+        return "I'm here with you. Could you tell me a little more?";
+    }
+
+    @SuppressWarnings("unchecked")
+    private String callGeminiChat(List<Map<String, String>> messages) {
+        try {
+            String systemText = messages.stream()
+                    .filter(m -> "system".equals(m.get("role")))
+                    .map(m -> m.get("content")).findFirst().orElse("");
+            List<Map<String, Object>> contents = new ArrayList<>();
+            for (Map<String, String> m : messages) {
+                String role = m.get("role");
+                if ("system".equals(role)) continue;
+                String gRole = "user".equals(role) ? "user" : "model";
+                contents.add(Map.of("role", gRole, "parts", List.of(Map.of("text", m.get("content")))));
+            }
+            Map<String, Object> requestBody = Map.of(
+                    "system_instruction", Map.of("parts", List.of(Map.of("text", systemText))),
+                    "contents", contents);
+            String url = "https://generativelanguage.googleapis.com/v1beta/models/" +
+                    "gemini-2.5-flash:generateContent?key=" + geminiApiKey;
+            Map<String, Object> response = restClient.post()
+                    .uri(url)
+                    .header("Content-Type", "application/json")
+                    .header("User-Agent", "Mozilla/5.0 (compatible; MindSpace/1.0)")
+                    .body(requestBody)
+                    .retrieve()
+                    .body(Map.class);
+            if (response != null && response.containsKey("candidates")) {
+                List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
+                if (!candidates.isEmpty()) {
+                    Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
+                    List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
+                    return (String) parts.get(0).get("text");
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Gemini chat error: " + e.getMessage());
+        }
+        return "I'm here with you. Could you tell me a little more?";
     }
 
     public MoodDto.MoodResponse generateInsight(UUID moodId) {

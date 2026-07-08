@@ -23,7 +23,7 @@ public class AiAssistantController {
     // POST /api/ai/chat
     @PostMapping("/chat")
     public ResponseEntity<AiChatDto.ChatResponse> chat(@RequestBody AiChatDto.ChatRequest request) {
-        String reply = aiInsightService.assistantReply(request.getMoodContext(), request.getQuestion());
+        String reply = aiInsightService.assistantReply(request.getMoodContext(), request.getQuestion(), request.getHistory());
         return ResponseEntity.ok(new AiChatDto.ChatResponse(reply));
     }
 }

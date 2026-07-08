@@ -65,6 +65,12 @@ app.push.vapid.public=${APP_PUSH_VAPID_PUBLIC:}
 app.push.vapid.private=${APP_PUSH_VAPID_PRIVATE:}
 app.push.vapid.subject=${APP_PUSH_VAPID_SUBJECT:mailto:you@example.com}
 
+# ── Telegram bot ──
+# Bot token from @BotFather; bot-username without the @; webhook-secret is any random string.
+app.telegram.bot-token=${APP_TELEGRAM_BOT_TOKEN:}
+app.telegram.bot-username=${APP_TELEGRAM_BOT_USERNAME:}
+app.telegram.webhook-secret=${APP_TELEGRAM_WEBHOOK_SECRET:}
+
 spring.security.oauth2.client.registration.google.client-id=YOUR_GOOGLE_CLIENT_ID
 spring.security.oauth2.client.registration.google.client-secret=YOUR_GOOGLE_CLIENT_SECRET
 spring.security.oauth2.client.registration.google.scope=email,profile

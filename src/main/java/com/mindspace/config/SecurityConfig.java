@@ -62,6 +62,8 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
                         // The browser fetches the public VAPID key before it can subscribe.
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/push/public-key").permitAll()
+                        // Telegram posts bot updates here (guarded by a secret in the path).
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/telegram/webhook/**").permitAll()
                         // Anyone can read the community forum; posting/replying needs an account.
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/forum/**").permitAll()
                         .requestMatchers("/api/forum/**").authenticated()

@@ -19,4 +19,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     // Recipients of the daily mood reminder: ordinary members who haven't opted out.
     List<User> findByRoleAndMoodReminderEnabledTrue(User.Role role);
+
+    // Telegram bot linking.
+    Optional<User> findByTelegramLinkCode(String telegramLinkCode);
+    Optional<User> findByTelegramChatId(Long telegramChatId);
 }

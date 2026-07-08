@@ -46,6 +46,13 @@ public class User {
     @Column(name = "last_reminder_date")
     private LocalDate lastReminderDate;
 
+    // Telegram bot link: chat id once connected, and a short-lived code used to connect.
+    @Column(name = "telegram_chat_id")
+    private Long telegramChatId;
+
+    @Column(name = "telegram_link_code", length = 40)
+    private String telegramLinkCode;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -64,6 +71,8 @@ public class User {
     public Role getRole() { return role; }
     public boolean isMoodReminderEnabled() { return moodReminderEnabled; }
     public LocalDate getLastReminderDate() { return lastReminderDate; }
+    public Long getTelegramChatId() { return telegramChatId; }
+    public String getTelegramLinkCode() { return telegramLinkCode; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
     // Setters
@@ -74,6 +83,8 @@ public class User {
     public void setRole(Role role) { this.role = role; }
     public void setMoodReminderEnabled(boolean moodReminderEnabled) { this.moodReminderEnabled = moodReminderEnabled; }
     public void setLastReminderDate(LocalDate lastReminderDate) { this.lastReminderDate = lastReminderDate; }
+    public void setTelegramChatId(Long telegramChatId) { this.telegramChatId = telegramChatId; }
+    public void setTelegramLinkCode(String telegramLinkCode) { this.telegramLinkCode = telegramLinkCode; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     // Builder

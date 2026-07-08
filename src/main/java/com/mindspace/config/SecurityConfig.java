@@ -60,6 +60,8 @@ public class SecurityConfig {
                         .requestMatchers("/login/oauth2/**").permitAll()
                         // WebRTC signaling authenticates itself via a JWT in the query string.
                         .requestMatchers("/ws/**").permitAll()
+                        // The browser fetches the public VAPID key before it can subscribe.
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/push/public-key").permitAll()
                         // Anyone can read the community forum; posting/replying needs an account.
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/forum/**").permitAll()
                         .requestMatchers("/api/forum/**").authenticated()

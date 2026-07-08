@@ -58,6 +58,13 @@ app.whatsapp.api-version=${APP_WHATSAPP_API_VERSION:v21.0}
 app.whatsapp.lang=${APP_WHATSAPP_LANG:en_US}
 app.whatsapp.template.session-confirmed=${APP_WHATSAPP_TEMPLATE_CONFIRMED:session_confirmed}
 
+# ── Web Push (browser notifications) ──
+# Generate a keypair with: npx web-push generate-vapid-keys
+# Public key is safe to expose; keep the private key secret (env only).
+app.push.vapid.public=${APP_PUSH_VAPID_PUBLIC:}
+app.push.vapid.private=${APP_PUSH_VAPID_PRIVATE:}
+app.push.vapid.subject=${APP_PUSH_VAPID_SUBJECT:mailto:you@example.com}
+
 spring.security.oauth2.client.registration.google.client-id=YOUR_GOOGLE_CLIENT_ID
 spring.security.oauth2.client.registration.google.client-secret=YOUR_GOOGLE_CLIENT_SECRET
 spring.security.oauth2.client.registration.google.scope=email,profile

@@ -17,16 +17,20 @@ public class NotificationService {
 
     private final NotificationRepository repo;
     private final UserRepository userRepository;
+    private final WebPushService webPushService;
 
-    public NotificationService(NotificationRepository repo, UserRepository userRepository) {
+    public NotificationService(NotificationRepository repo, UserRepository userRepository,
+                               WebPushService webPushService) {
         this.repo = repo;
         this.userRepository = userRepository;
+        this.webPushService = webPushService;
     }
 
-    /** Persist an in-app notification for a recipient. */
+    /** Persist an in-app notification for a recipient, and push it to their devices. */
     public void create(User recipient, String type, String message, String link) {
         if (recipient == null) return;
         repo.save(new Notification(recipient, type, message, link));
+        webPushService.sendToUser(recipient, "MindSpace", message, link);
     }
 
     public List<NotificationDto.Item> list(String email) {

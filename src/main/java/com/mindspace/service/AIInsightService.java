@@ -30,6 +30,21 @@ public class AIInsightService {
         this.restClient = RestClient.create();
     }
 
+    // Grounds the assistant in what MindSpace actually is and does, so it guides
+    // users to in-app features instead of inventing generic advice or naming rivals.
+    private static final String SYSTEM =
+        "You are the built-in AI assistant inside MindSpace, a mental wellness app. Speak as part of "
+        + "MindSpace (\"we\"/\"in the app\"). What MindSpace offers: daily mood journaling with emotion tags; "
+        + "AI wellness insights; mood trend charts; an anonymous peer support community forum; and a directory "
+        + "of LICENSED THERAPISTS that users can BOOK directly in the app — either an online video session "
+        + "held inside MindSpace, or an in-person session — paid securely via M-Pesa, card or bank. "
+        + "RULES: (1) MindSpace DOES let users book therapists. When someone asks how to book, tell them to open "
+        + "the \"Find a Therapist\" page in the app, pick a therapist, choose a time, and pay — then they can "
+        + "message/video-call the therapist in the app. (2) NEVER recommend or name any other app or website "
+        + "(e.g. BetterHelp, Talkspace) — only point users to MindSpace's own features. (3) Be warm, concise and "
+        + "supportive; do not diagnose or replace professional care. (4) For an emergency or crisis, gently "
+        + "suggest contacting a local emergency line or crisis service.";
+
     /**
      * Stateless assistant used by the dashboard. Given a summary of the user's
      * recent moods and an optional question, returns a Gemini reply. When the
@@ -42,16 +57,15 @@ public class AIInsightService {
 
         String prompt;
         if (question == null || question.isBlank()) {
-            prompt = "You are a compassionate mental wellness assistant for the MindSpace app. "
+            prompt = SYSTEM + "\n\n"
                     + "Based on the user's recent mood entries below, give a short, warm, personalised insight "
                     + "(3-4 sentences). Point out one pattern you notice, offer one practical tip, and end with "
-                    + "encouragement. Do not diagnose or replace professional help.\n\nRecent moods:\n" + context;
+                    + "encouragement.\n\nRecent moods:\n" + context;
         } else {
             String q = question.length() > 1000 ? question.substring(0, 1000) : question;
-            prompt = "You are a compassionate mental wellness assistant for the MindSpace app. "
+            prompt = SYSTEM + "\n\n"
                     + "Use the user's recent mood entries as context, then answer their question in a warm, "
-                    + "supportive and practical way (keep it concise). If the question is a crisis or medical issue, "
-                    + "gently encourage them to seek professional help. Do not diagnose.\n\n"
+                    + "supportive and practical way (keep it concise), following the rules above.\n\n"
                     + "Recent moods:\n" + context + "\n\nUser question: " + q;
         }
         return generate(prompt);

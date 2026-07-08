@@ -1,10 +1,14 @@
 package com.mindspace.ws;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mindspace.model.User;
 import com.mindspace.repository.UserRepository;
 import com.mindspace.security.JwtUtil;
+import com.mindspace.service.PresenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -30,13 +34,18 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
+    private final PresenceService presenceService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     // userId -> that user's open sockets (multiple tabs/devices).
     private final Map<UUID, CopyOnWriteArrayList<WebSocketSession>> sessions = new ConcurrentHashMap<>();
 
-    public ChatWebSocketHandler(JwtUtil jwtUtil, UserRepository userRepository) {
+    // @Lazy avoids a construction cycle with PresenceService, which pushes back through this handler.
+    public ChatWebSocketHandler(JwtUtil jwtUtil, UserRepository userRepository,
+                                @Lazy PresenceService presenceService) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
+        this.presenceService = presenceService;
     }
 
     @Override
@@ -56,13 +65,29 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             return;
         }
         session.getAttributes().put("userId", userId);
-        sessions.computeIfAbsent(userId, k -> new CopyOnWriteArrayList<>()).add(session);
+        CopyOnWriteArrayList<WebSocketSession> list =
+                sessions.computeIfAbsent(userId, k -> new CopyOnWriteArrayList<>());
+        boolean wasOffline = list.isEmpty();
+        list.add(session);
         send(session, "{\"type\":\"ready\"}");
+        // Only announce presence when this is the user's first live socket.
+        UUID uid = userId;
+        if (wasOffline) safelyRun(() -> presenceService.onConnect(uid));
     }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
-        // Client may send a heartbeat; nothing to relay — messages are sent over REST.
+        UUID userId = (UUID) session.getAttributes().get("userId");
+        if (userId == null) return;
+        try {
+            JsonNode node = objectMapper.readTree(message.getPayload());
+            if ("presence-visibility".equals(node.path("type").asText())) {
+                presenceService.setVisibility(userId, node.path("visible").asBoolean(true));
+            }
+            // Other inbound frames (e.g. heartbeats) need no relay — messages go over REST.
+        } catch (Exception e) {
+            log.debug("chat ws inbound parse failed: {}", e.getMessage());
+        }
     }
 
     @Override
@@ -70,10 +95,20 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         UUID userId = (UUID) session.getAttributes().get("userId");
         if (userId == null) return;
         CopyOnWriteArrayList<WebSocketSession> list = sessions.get(userId);
+        boolean nowOffline = false;
         if (list != null) {
             list.remove(session);
-            if (list.isEmpty()) sessions.remove(userId);
+            if (list.isEmpty()) {
+                sessions.remove(userId);
+                nowOffline = true;
+            }
         }
+        if (nowOffline) safelyRun(() -> presenceService.onDisconnect(userId));
+    }
+
+    // Presence fan-out touches the DB and must never break the socket lifecycle.
+    private void safelyRun(Runnable r) {
+        try { r.run(); } catch (Exception e) { log.debug("presence hook failed: {}", e.getMessage()); }
     }
 
     /** True if the user has at least one live socket open. */

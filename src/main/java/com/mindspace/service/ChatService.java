@@ -80,11 +80,11 @@ public class ChatService {
         return userRepository.findAll().stream()
                 .filter(u -> u.getRole() == User.Role.USER)
                 .filter(u -> !u.getId().equals(me.getId()))
-                .filter(u -> u.getUsername() != null && u.getUsername().toLowerCase().contains(needle))
+                .filter(u -> u.getHandle() != null && u.getHandle().toLowerCase().contains(needle))
                 .filter(u -> !isBlockedEitherWay(me, u))
-                .sorted(Comparator.comparing(u -> u.getUsername().toLowerCase()))
+                .sorted(Comparator.comparing(u -> u.getHandle().toLowerCase()))
                 .limit(15)
-                .map(u -> new ChatDto.UserResult(u.getId(), u.getUsername()))
+                .map(u -> new ChatDto.UserResult(u.getId(), u.getHandle(), publicAvatar(u)))
                 .toList();
     }
 
@@ -106,9 +106,10 @@ public class ChatService {
             if (c.getType() == Conversation.Type.DIRECT) {
                 User other = members.stream().map(ConversationMember::getUser)
                         .filter(u -> !u.getId().equals(me.getId())).findFirst().orElse(null);
-                String name = other != null ? other.getUsername() : "Unknown";
+                String name = display(other);
                 s.setTitle(name);
                 s.setAvatar(initial(name));
+                s.setAvatarUrl(publicAvatar(other));
                 s.setOtherUserId(other != null ? other.getId() : null);
             } else {
                 s.setTitle(c.getName());
@@ -197,7 +198,14 @@ public class ChatService {
             d.setTitle(c.getName());
         }
         d.setMembers(members.stream()
-                .map(m -> new ChatDto.MemberInfo(m.getUser().getId(), m.getUser().getUsername(), m.getRole().name()))
+                .map(m -> {
+                    User mu = m.getUser();
+                    boolean visible = mu.isActivityVisible();
+                    boolean online = visible && wsHandler.isOnline(mu.getId());
+                    LocalDateTime lastSeen = visible ? mu.getLastSeenAt() : null;
+                    return new ChatDto.MemberInfo(mu.getId(), mu.getUsername(), m.getRole().name(),
+                            publicAvatar(mu), online, lastSeen);
+                })
                 .toList());
         d.setMessages(messageRepo.findByConversationOrderByCreatedAtAsc(c).stream()
                 .map(m -> toMessageInfo(m, me)).toList());
@@ -332,7 +340,7 @@ public class ChatService {
     public List<ChatDto.UserResult> listBlocked(String email) {
         User me = getUser(email);
         return blockRepo.findByBlocker(me).stream()
-                .map(b -> new ChatDto.UserResult(b.getBlocked().getId(), b.getBlocked().getUsername()))
+                .map(b -> new ChatDto.UserResult(b.getBlocked().getId(), b.getBlocked().getUsername(), null))
                 .toList();
     }
 
@@ -414,6 +422,18 @@ public class ChatService {
     private String initial(String name) {
         if (name == null || name.isBlank()) return "?";
         return name.trim().substring(0, 1).toUpperCase();
+    }
+
+    // A user's photo only when they've chosen to share it publicly; a private photo
+    // never leaves its owner, so this returns null for everyone else.
+    private String publicAvatar(User u) {
+        return u != null && "public".equalsIgnoreCase(u.getAvatarVisibility()) ? u.getAvatarUrl() : null;
+    }
+
+    // Public identity shown in chats — the messaging handle, never the real name.
+    private String display(User u) {
+        if (u == null) return "Unknown";
+        return u.getHandle() != null && !u.getHandle().isBlank() ? u.getHandle() : u.getUsername();
     }
 
     private User getUser(String email) {

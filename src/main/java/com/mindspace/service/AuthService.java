@@ -5,6 +5,7 @@ import com.mindspace.model.EmailOtp;
 import com.mindspace.model.User;
 import com.mindspace.repository.UserRepository;
 import com.mindspace.security.JwtUtil;
+import com.mindspace.util.HandleUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -59,7 +60,10 @@ public class AuthService {
     private AuthDto.AuthResponse issueToken(User user) {
         applyAdminRole(user);
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthDto.AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole().name());
+        AuthDto.AuthResponse resp = new AuthDto.AuthResponse(
+                token, user.getUsername(), user.getEmail(), user.getRole().name());
+        resp.setHandle(user.getHandle());
+        return resp;
     }
 
     // Promote configured emails to ADMIN automatically (comma-separated app.admin.emails)
@@ -84,6 +88,10 @@ public class AuthService {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Username is already taken");
         }
+        String handle = HandleUtil.requireValid(request.getHandle());
+        if (userRepository.existsByHandle(handle)) {
+            throw new IllegalArgumentException("That username is already taken. Try another.");
+        }
         if (!otpEnabled) {
             User user = User.builder()
                     .username(request.getUsername())
@@ -91,12 +99,13 @@ public class AuthService {
                     .passwordHash(passwordEncoder.encode(request.getPassword()))
                     .role(User.Role.USER)
                     .build();
+            user.setHandle(handle);
             userRepository.save(user);
             mailService.sendWelcomeAsync(user.getEmail(), user.getUsername());
             return issueToken(user);
         }
         otpService.issue(request.getEmail(), EmailOtp.Purpose.REGISTER,
-                request.getUsername(), passwordEncoder.encode(request.getPassword()));
+                request.getUsername(), handle, passwordEncoder.encode(request.getPassword()));
         return new AuthDto.PendingResponse(request.getEmail(),
                 "We sent a 6-digit verification code to " + request.getEmail());
     }
@@ -144,12 +153,20 @@ public class AuthService {
             if (userRepository.existsByUsername(otp.getUsername())) {
                 throw new IllegalArgumentException("Username is already taken");
             }
+            // Prefer the handle the user chose; fall back / de-collide if it's since been taken.
+            String handle = otp.getHandle();
+            if (handle == null || !HandleUtil.isValid(handle) || userRepository.existsByHandle(handle)) {
+                String base = HandleUtil.isValid(handle) ? handle
+                        : HandleUtil.fromName(otp.getUsername(), otp.getEmail());
+                handle = HandleUtil.makeUnique(base, userRepository::existsByHandle);
+            }
             user = User.builder()
                     .username(otp.getUsername())
                     .email(otp.getEmail())
                     .passwordHash(otp.getPasswordHash())
                     .role(User.Role.USER)
                     .build();
+            user.setHandle(handle);
             userRepository.save(user);
             mailService.sendWelcomeAsync(user.getEmail(), user.getUsername());
         } else {
@@ -180,6 +197,74 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         return issueToken(user);
+    }
+
+    // Live availability check for the signup / settings username field.
+    public java.util.Map<String, Object> checkHandle(String raw) {
+        java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+        if (!HandleUtil.isValid(raw)) {
+            m.put("valid", false);
+            m.put("available", false);
+            m.put("message", HandleUtil.RULES);
+            return m;
+        }
+        boolean taken = userRepository.existsByHandle(raw.trim().toLowerCase());
+        m.put("valid", true);
+        m.put("available", !taken);
+        m.put("message", taken ? "That username is taken." : "Available");
+        return m;
+    }
+
+    // Settings: read the caller's profile (real name + messaging handle).
+    public java.util.Map<String, Object> profile(String email) {
+        User u = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("username", u.getUsername());
+        m.put("handle", u.getHandle() == null ? "" : u.getHandle());
+        m.put("email", u.getEmail());
+        m.put("avatarUrl", u.getAvatarUrl() == null ? "" : u.getAvatarUrl());
+        m.put("avatarVisibility", u.getAvatarVisibility());
+        return m;
+    }
+
+    // Settings: set the caller's profile photo. `image` is a small data URL produced
+    // client-side; we cap the size so a runaway upload can't bloat the row.
+    public java.util.Map<String, Object> setAvatar(String email, String image, String visibility) {
+        if (image == null || !image.startsWith("data:image/")) {
+            throw new IllegalArgumentException("Please provide an image.");
+        }
+        if (image.length() > 400_000) { // ~300 KB of base64 — the client sends far less
+            throw new IllegalArgumentException("That image is too large. Please choose a smaller photo.");
+        }
+        String vis = "public".equalsIgnoreCase(visibility) ? "public" : "private";
+        User u = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        u.setAvatarUrl(image);
+        u.setAvatarVisibility(vis);
+        userRepository.save(u);
+        return java.util.Map.of("avatarUrl", image, "avatarVisibility", vis);
+    }
+
+    // Settings: remove the caller's photo (or, when going private, stop sharing it).
+    public void removeAvatar(String email) {
+        User u = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        u.setAvatarUrl(null);
+        userRepository.save(u);
+    }
+
+    // Settings: change the caller's messaging handle.
+    public java.util.Map<String, Object> updateHandle(String email, String raw) {
+        String h = HandleUtil.requireValid(raw);
+        User u = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        if (!h.equals(u.getHandle()) && userRepository.existsByHandle(h)) {
+            throw new IllegalArgumentException("That username is already taken. Try another.");
+        }
+        u.setHandle(h);
+        userRepository.save(u);
+        return java.util.Map.of("handle", h);
     }
 
     public AuthDto.PendingResponse resend(AuthDto.ResendRequest request) {

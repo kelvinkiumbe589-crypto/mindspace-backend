@@ -13,8 +13,11 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
     Optional<User> findByUsername(String username);
+    Optional<User> findByHandle(String handle);
     boolean existsByEmail(String email);
     boolean existsByUsername(String username);
+    boolean existsByHandle(String handle);
+    List<User> findByHandleIsNull();
     long countByCreatedAtAfter(LocalDateTime time);
 
     // Recipients of the daily mood reminder: ordinary members who haven't opted out.

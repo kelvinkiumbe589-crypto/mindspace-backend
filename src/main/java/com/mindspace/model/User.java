@@ -26,6 +26,13 @@ public class User {
     @Column(unique = true, nullable = false, length = 100)
     private String email;
 
+    // Public messaging username (a "handle" like grace_ke). Distinct from the real
+    // name in `username` — this is what other members search by, so real names stay
+    // private. Nullable to allow adding the column to existing rows; backfilled on
+    // startup and set for every new signup.
+    @Column(unique = true, length = 20)
+    private String handle;
+
     @NotBlank
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
@@ -64,6 +71,24 @@ public class User {
     @Column(name = "ai_credits", nullable = false, columnDefinition = "integer default 3")
     private int aiCredits = 3;
 
+    // Profile photo. Stored as a small downscaled data URL. `avatarVisibility` is
+    // 'private' (only the owner ever sees it — never exposed to others) or 'public'
+    // (shown to people they chat with).
+    @Column(name = "avatar_url", columnDefinition = "text")
+    private String avatarUrl;
+
+    @Column(name = "avatar_visibility", length = 10, nullable = false, columnDefinition = "varchar(10) default 'private'")
+    private String avatarVisibility = "private";
+
+    // Presence: whether this user advertises their online/last-seen status, and the
+    // last time they had a live chat socket open. Mutual — hiding yours also hides
+    // others' from you (enforced client-side).
+    @Column(name = "activity_visible", nullable = false, columnDefinition = "boolean default true")
+    private boolean activityVisible = true;
+
+    @Column(name = "last_seen_at")
+    private LocalDateTime lastSeenAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -78,6 +103,7 @@ public class User {
     public UUID getId() { return id; }
     public String getUsername() { return username; }
     public String getEmail() { return email; }
+    public String getHandle() { return handle; }
     public String getPasswordHash() { return passwordHash; }
     public Role getRole() { return role; }
     public boolean isMoodReminderEnabled() { return moodReminderEnabled; }
@@ -87,12 +113,17 @@ public class User {
     public String getReferralCode() { return referralCode; }
     public UUID getReferredBy() { return referredBy; }
     public int getAiCredits() { return aiCredits; }
+    public String getAvatarUrl() { return avatarUrl; }
+    public String getAvatarVisibility() { return avatarVisibility; }
+    public boolean isActivityVisible() { return activityVisible; }
+    public LocalDateTime getLastSeenAt() { return lastSeenAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
     // Setters
     public void setId(UUID id) { this.id = id; }
     public void setUsername(String username) { this.username = username; }
     public void setEmail(String email) { this.email = email; }
+    public void setHandle(String handle) { this.handle = handle; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public void setRole(Role role) { this.role = role; }
     public void setMoodReminderEnabled(boolean moodReminderEnabled) { this.moodReminderEnabled = moodReminderEnabled; }
@@ -102,6 +133,10 @@ public class User {
     public void setReferralCode(String referralCode) { this.referralCode = referralCode; }
     public void setReferredBy(UUID referredBy) { this.referredBy = referredBy; }
     public void setAiCredits(int aiCredits) { this.aiCredits = aiCredits; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+    public void setAvatarVisibility(String avatarVisibility) { this.avatarVisibility = avatarVisibility; }
+    public void setActivityVisible(boolean activityVisible) { this.activityVisible = activityVisible; }
+    public void setLastSeenAt(LocalDateTime lastSeenAt) { this.lastSeenAt = lastSeenAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     // Builder

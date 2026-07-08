@@ -35,6 +35,10 @@ public class EmailOtp {
     @Column(length = 50)
     private String username;
 
+    // Pending messaging handle (REGISTER only)
+    @Column(length = 20)
+    private String handle;
+
     @Column(name = "password_hash")
     private String passwordHash;
 
@@ -66,11 +70,13 @@ public class EmailOtp {
     public String getCode() { return code; }
     public Purpose getPurpose() { return purpose; }
     public String getUsername() { return username; }
+    public String getHandle() { return handle; }
     public String getPasswordHash() { return passwordHash; }
     public LocalDateTime getExpiresAt() { return expiresAt; }
     public int getAttempts() { return attempts; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
     public void setAttempts(int attempts) { this.attempts = attempts; }
+    public void setHandle(String handle) { this.handle = handle; }
     public boolean isExpired() { return LocalDateTime.now().isAfter(expiresAt); }
 }

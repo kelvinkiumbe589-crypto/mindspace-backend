@@ -72,21 +72,33 @@ public class ChatDto {
     public static class UserResult {
         private UUID id;
         private String username;
-        public UserResult(UUID id, String username) { this.id = id; this.username = username; }
+        private String avatarUrl; // public photo only (null otherwise)
+        public UserResult(UUID id, String username, String avatarUrl) {
+            this.id = id; this.username = username; this.avatarUrl = avatarUrl;
+        }
         public UUID getId() { return id; }
         public String getUsername() { return username; }
+        public String getAvatarUrl() { return avatarUrl; }
     }
 
     public static class MemberInfo {
         private UUID userId;
         private String username;
         private String role;
-        public MemberInfo(UUID userId, String username, String role) {
+        private String avatarUrl;      // public photo only (null otherwise)
+        private boolean online;        // has a live socket, and shares activity status
+        private LocalDateTime lastSeen; // last time online (null if hidden/unknown)
+        public MemberInfo(UUID userId, String username, String role,
+                          String avatarUrl, boolean online, LocalDateTime lastSeen) {
             this.userId = userId; this.username = username; this.role = role;
+            this.avatarUrl = avatarUrl; this.online = online; this.lastSeen = lastSeen;
         }
         public UUID getUserId() { return userId; }
         public String getUsername() { return username; }
         public String getRole() { return role; }
+        public String getAvatarUrl() { return avatarUrl; }
+        public boolean isOnline() { return online; }
+        public LocalDateTime getLastSeen() { return lastSeen; }
     }
 
     public static class MessageInfo {
@@ -116,6 +128,7 @@ public class ChatDto {
         private String type;         // DIRECT | GROUP
         private String title;        // group name, or the other member's username
         private String avatar;       // initial for the avatar circle
+        private String avatarUrl;    // other member's public photo, DIRECT only (null otherwise)
         private UUID otherUserId;    // for DIRECT chats (null for groups)
         private int memberCount;
         private String lastMessage;
@@ -127,6 +140,7 @@ public class ChatDto {
         public String getType() { return type; }
         public String getTitle() { return title; }
         public String getAvatar() { return avatar; }
+        public String getAvatarUrl() { return avatarUrl; }
         public UUID getOtherUserId() { return otherUserId; }
         public int getMemberCount() { return memberCount; }
         public String getLastMessage() { return lastMessage; }
@@ -137,6 +151,7 @@ public class ChatDto {
         public void setType(String type) { this.type = type; }
         public void setTitle(String title) { this.title = title; }
         public void setAvatar(String avatar) { this.avatar = avatar; }
+        public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
         public void setOtherUserId(UUID otherUserId) { this.otherUserId = otherUserId; }
         public void setMemberCount(int memberCount) { this.memberCount = memberCount; }
         public void setLastMessage(String lastMessage) { this.lastMessage = lastMessage; }

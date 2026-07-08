@@ -23,6 +23,13 @@ public class AuthController {
         return ResponseEntity.ok(authService.register(request));
     }
 
+    // Live check for the signup username field.
+    @GetMapping("/username-available")
+    public ResponseEntity<java.util.Map<String, Object>> usernameAvailable(
+            @RequestParam("username") String username) {
+        return ResponseEntity.ok(authService.checkHandle(username));
+    }
+
     // Returns AuthResponse (trusted device) or PendingResponse (OTP required).
     @PostMapping("/login")
     public ResponseEntity<?> login(

@@ -33,10 +33,17 @@ public class OtpService {
 
     /** Create (or replace) a code for this email+purpose and email it. */
     public void issue(String email, EmailOtp.Purpose purpose, String username, String passwordHash) {
+        issue(email, purpose, username, null, passwordHash);
+    }
+
+    /** Create (or replace) a code, stashing the pending handle too (REGISTER). */
+    public void issue(String email, EmailOtp.Purpose purpose, String username, String handle, String passwordHash) {
         repo.deleteByEmailAndPurpose(email, purpose);
         String code = String.format("%06d", random.nextInt(1_000_000));
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(EXPIRY_MINUTES);
-        repo.save(new EmailOtp(email, code, purpose, username, passwordHash, expiresAt));
+        EmailOtp otp = new EmailOtp(email, code, purpose, username, passwordHash, expiresAt);
+        otp.setHandle(handle);
+        repo.save(otp);
         sendCode(email, code, purpose);
     }
 
@@ -44,7 +51,7 @@ public class OtpService {
     public void resend(String email, EmailOtp.Purpose purpose) {
         EmailOtp existing = repo.findFirstByEmailAndPurposeOrderByCreatedAtDesc(email, purpose)
                 .orElseThrow(() -> new IllegalArgumentException("No verification in progress. Please start again."));
-        issue(email, purpose, existing.getUsername(), existing.getPasswordHash());
+        issue(email, purpose, existing.getUsername(), existing.getHandle(), existing.getPasswordHash());
     }
 
     /**

@@ -48,6 +48,8 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/ai/deep-dive").authenticated()
                         .requestMatchers("/api/ai/**").permitAll()
                         .requestMatchers("/api/contact").permitAll()
+                        // Anonymous page-view beacons from the web app (reading analytics stays admin-only).
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/analytics/pageview").permitAll()
                         .requestMatchers("/api/payments/**").permitAll()
                         .requestMatchers("/api/tips/**").permitAll()
                         .requestMatchers("/api/support/admin/**").hasRole("ADMIN")

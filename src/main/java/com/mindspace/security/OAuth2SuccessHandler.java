@@ -3,6 +3,7 @@ package com.mindspace.security;
 import com.mindspace.model.User;
 import com.mindspace.repository.UserRepository;
 import com.mindspace.service.MailService;
+import com.mindspace.util.HandleUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -57,6 +58,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                         .passwordHash(passwordEncoder.encode("oauth2:" + UUID.randomUUID()))
                         .role(User.Role.USER)
                         .build();
+                // Auto-generate a messaging handle (Google users don't pick one).
+                u.setHandle(HandleUtil.makeUnique(HandleUtil.fromName(name, email), userRepository::existsByHandle));
                 User created = userRepository.save(u);
                 mailService.sendWelcomeAsync(created.getEmail(), created.getUsername());
             }

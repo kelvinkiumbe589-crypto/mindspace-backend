@@ -6,10 +6,25 @@ import jakarta.validation.constraints.Size;
 
 public class AuthDto {
 
+    // Change messaging handle (Settings).
+    public static class HandleRequest {
+        @NotBlank(message = "Username is required")
+        @Size(min = 3, max = 20, message = "Username must be 3-20 characters")
+        private String handle;
+        public String getHandle() { return handle; }
+        public void setHandle(String handle) { this.handle = handle; }
+    }
+
     public static class RegisterRequest {
+        // Real/display name (shown in greetings, emails, non-anonymous forum posts).
         @NotBlank(message = "Username is required")
         @Size(min = 3, max = 50, message = "Username must be 3-50 characters")
         private String username;
+
+        // Public messaging handle other members search by (grace_ke).
+        @NotBlank(message = "Username is required")
+        @Size(min = 3, max = 20, message = "Username must be 3-20 characters")
+        private String handle;
 
         @Email(message = "Invalid email address")
         @NotBlank(message = "Email is required")
@@ -20,9 +35,11 @@ public class AuthDto {
         private String password;
 
         public String getUsername() { return username; }
+        public String getHandle() { return handle; }
         public String getEmail() { return email; }
         public String getPassword() { return password; }
         public void setUsername(String username) { this.username = username; }
+        public void setHandle(String handle) { this.handle = handle; }
         public void setEmail(String email) { this.email = email; }
         public void setPassword(String password) { this.password = password; }
     }
@@ -130,6 +147,7 @@ public class AuthDto {
     public static class AuthResponse {
         private String token;
         private String username;
+        private String handle;
         private String email;
         private String role;
         private String deviceToken; // present only when the user opted to trust this device
@@ -143,9 +161,11 @@ public class AuthDto {
 
         public String getToken() { return token; }
         public String getUsername() { return username; }
+        public String getHandle() { return handle; }
         public String getEmail() { return email; }
         public String getRole() { return role; }
         public String getDeviceToken() { return deviceToken; }
+        public void setHandle(String handle) { this.handle = handle; }
         public void setDeviceToken(String deviceToken) { this.deviceToken = deviceToken; }
     }
 }

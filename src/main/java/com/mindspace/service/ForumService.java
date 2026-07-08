@@ -26,6 +26,7 @@ public class ForumService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final MailService mailService;
+    private final WebPushService webPushService;
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
@@ -35,13 +36,15 @@ public class ForumService {
                         ForumPostLikeRepository forumPostLikeRepository,
                         UserRepository userRepository,
                         NotificationService notificationService,
-                        MailService mailService) {
+                        MailService mailService,
+                        WebPushService webPushService) {
         this.forumPostRepository = forumPostRepository;
         this.forumReplyRepository = forumReplyRepository;
         this.forumPostLikeRepository = forumPostLikeRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.mailService = mailService;
+        this.webPushService = webPushService;
     }
 
     // ── Create a post ─────────────────────────────────────────────
@@ -142,9 +145,13 @@ public class ForumService {
         boolean anon = Boolean.TRUE.equals(request.getIsAnonymous());
         String who = (anon || replier == null) ? "Someone" : replier.getUsername();
         String message = who + " replied to your post \"" + post.getTitle() + "\"";
+        // In-app bell + push (if the author has enabled it).
         notificationService.create(author, "FORUM_REPLY", message, "/community-forum");
-        mailService.sendForumReplyAsync(author.getEmail(), author.getUsername(), who,
-                post.getTitle(), request.getContent(), frontendUrl + "/community-forum");
+        // Email only as a fallback — if they get push, don't also spam their inbox.
+        if (!webPushService.hasSubscription(author)) {
+            mailService.sendForumReplyAsync(author.getEmail(), author.getUsername(), who,
+                    post.getTitle(), request.getContent(), frontendUrl + "/community-forum");
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────

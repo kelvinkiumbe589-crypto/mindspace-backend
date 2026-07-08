@@ -59,6 +59,11 @@ public class WebPushService {
 
     public String publicKey() { return vapidPublic; }
 
+    /** True if the user has at least one device subscribed to push. */
+    public boolean hasSubscription(User user) {
+        return user != null && !repo.findByUser(user).isEmpty();
+    }
+
     private nl.martijndwars.webpush.PushService push() throws Exception {
         if (pushService == null) {
             synchronized (this) {

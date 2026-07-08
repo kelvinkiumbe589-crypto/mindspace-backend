@@ -89,7 +89,7 @@ public class ForumService {
         response.setLikeCount((int) forumPostLikeRepository.countByPost(post));
         response.setLikedByMe(currentUser != null && forumPostLikeRepository.existsByPostAndUser(post, currentUser));
         response.setCreatedAt(post.getCreatedAt());
-        response.setReplies(replies.stream().map(this::toReplyResponse).toList());
+        response.setReplies(replies.stream().map(r -> toReplyResponse(r, currentUser)).toList());
         return response;
     }
 
@@ -132,7 +132,33 @@ public class ForumService {
         ForumReply saved = forumReplyRepository.save(reply);
 
         notifyAuthorOfReply(post, user, request);
-        return toReplyResponse(saved);
+        return toReplyResponse(saved, user);
+    }
+
+    // ── Edit / delete your own comment ────────────────────────────
+    @Transactional
+    public ForumDto.ReplyResponse editReply(String email, UUID replyId, String content) {
+        User user = getUser(email);
+        ForumReply reply = forumReplyRepository.findById(replyId)
+                .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
+        requireOwner(reply, user);
+        reply.setContent(content);
+        return toReplyResponse(forumReplyRepository.save(reply), user);
+    }
+
+    @Transactional
+    public void deleteReply(String email, UUID replyId) {
+        User user = getUser(email);
+        ForumReply reply = forumReplyRepository.findById(replyId)
+                .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
+        requireOwner(reply, user);
+        forumReplyRepository.delete(reply);
+    }
+
+    private void requireOwner(ForumReply reply, User user) {
+        if (reply.getUser() == null || !reply.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("You can only edit or delete your own comment.");
+        }
     }
 
     // Alert the post's author (in-app + email) that someone replied — unless they're
@@ -185,11 +211,13 @@ public class ForumService {
         return response;
     }
 
-    private ForumDto.ReplyResponse toReplyResponse(ForumReply reply) {
+    private ForumDto.ReplyResponse toReplyResponse(ForumReply reply, User currentUser) {
         ForumDto.ReplyResponse response = new ForumDto.ReplyResponse();
         response.setId(reply.getId());
         response.setContent(reply.getContent());
         response.setAuthor(resolveAuthor(reply.getUser(), reply.getIsAnonymous()));
+        response.setMine(currentUser != null && reply.getUser() != null
+                && reply.getUser().getId().equals(currentUser.getId()));
         response.setCreatedAt(reply.getCreatedAt());
         return response;
     }

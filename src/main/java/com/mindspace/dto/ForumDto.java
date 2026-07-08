@@ -49,15 +49,18 @@ public class ForumDto {
         private UUID id;
         private String content;
         private String author;
+        private boolean mine; // true if the current caller wrote it (can edit/delete)
         private LocalDateTime createdAt;
 
         public UUID getId() { return id; }
         public String getContent() { return content; }
         public String getAuthor() { return author; }
+        public boolean isMine() { return mine; }
         public LocalDateTime getCreatedAt() { return createdAt; }
         public void setId(UUID id) { this.id = id; }
         public void setContent(String content) { this.content = content; }
         public void setAuthor(String author) { this.author = author; }
+        public void setMine(boolean mine) { this.mine = mine; }
         public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     }
 

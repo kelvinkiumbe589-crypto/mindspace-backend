@@ -45,6 +45,10 @@ public class Booking {
 
     // For in-person sessions: a short code the client shows on arrival and the
     // therapist verifies. Generated when the booking is approved.
+    // The client's phone (captured at booking) — used for WhatsApp session messages.
+    @Column(name = "client_phone", length = 30)
+    private String clientPhone;
+
     @Column(name = "check_in_code", length = 8)
     private String checkInCode;
 
@@ -70,6 +74,7 @@ public class Booking {
     public LocalDateTime getScheduledAt() { return scheduledAt; }
     public Status getStatus() { return status; }
     public String getOrderTrackingId() { return orderTrackingId; }
+    public String getClientPhone() { return clientPhone; }
     public String getCheckInCode() { return checkInCode; }
     public boolean isCheckedIn() { return checkedIn; }
     public Integer getRating() { return rating; }
@@ -82,6 +87,7 @@ public class Booking {
     public void setScheduledAt(LocalDateTime scheduledAt) { this.scheduledAt = scheduledAt; }
     public void setStatus(Status status) { this.status = status; }
     public void setOrderTrackingId(String orderTrackingId) { this.orderTrackingId = orderTrackingId; }
+    public void setClientPhone(String clientPhone) { this.clientPhone = clientPhone; }
     public void setCheckInCode(String checkInCode) { this.checkInCode = checkInCode; }
     public void setCheckedIn(boolean checkedIn) { this.checkedIn = checkedIn; }
     public void setRating(Integer rating) { this.rating = rating; }

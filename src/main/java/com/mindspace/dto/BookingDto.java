@@ -13,13 +13,16 @@ public class BookingDto {
         private String sessionType; // ONLINE | PHYSICAL
 
         private String scheduledAt;  // ISO-8601, e.g. 2026-07-10T15:00
+        private String phone;        // client's phone, for WhatsApp session messages
 
         public String getTherapistId() { return therapistId; }
         public String getSessionType() { return sessionType; }
         public String getScheduledAt() { return scheduledAt; }
+        public String getPhone() { return phone; }
         public void setTherapistId(String therapistId) { this.therapistId = therapistId; }
         public void setSessionType(String sessionType) { this.sessionType = sessionType; }
         public void setScheduledAt(String scheduledAt) { this.scheduledAt = scheduledAt; }
+        public void setPhone(String phone) { this.phone = phone; }
     }
 
     public static class PaidRequest {

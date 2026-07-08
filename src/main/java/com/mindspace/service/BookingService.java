@@ -25,6 +25,7 @@ public class BookingService {
     private final TherapistProfileRepository profileRepo;
     private final UserRepository userRepository;
     private final MailService mailService;
+    private final WhatsAppService whatsAppService;
 
     @org.springframework.beans.factory.annotation.Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
@@ -32,12 +33,17 @@ public class BookingService {
     @org.springframework.beans.factory.annotation.Value("${app.therapist.portal-url:}")
     private String portalUrl;
 
+    @org.springframework.beans.factory.annotation.Value("${app.whatsapp.template.session-confirmed:session_confirmed}")
+    private String waTemplateConfirmed;
+
     public BookingService(BookingRepository bookingRepo, TherapistProfileRepository profileRepo,
-                          UserRepository userRepository, MailService mailService) {
+                          UserRepository userRepository, MailService mailService,
+                          WhatsAppService whatsAppService) {
         this.bookingRepo = bookingRepo;
         this.profileRepo = profileRepo;
         this.userRepository = userRepository;
         this.mailService = mailService;
+        this.whatsAppService = whatsAppService;
     }
 
     private User user(String email) {
@@ -69,6 +75,7 @@ public class BookingService {
         b.setSessionType(physical ? "PHYSICAL" : "ONLINE");
         b.setAmount(amount);
         b.setScheduledAt(parseWhen(req.getScheduledAt()));
+        b.setClientPhone(req.getPhone());
         b.setStatus(Booking.Status.PENDING_PAYMENT);
         return toResponse(bookingRepo.save(b));
     }
@@ -172,6 +179,9 @@ public class BookingService {
         }
         Booking saved = bookingRepo.save(b);
         notifyClientApproved(saved);
+        // WhatsApp confirmation to the client (if configured + we have their number).
+        whatsAppService.sendTemplateAsync(saved.getClientPhone(), waTemplateConfirmed,
+                firstName(saved.getClient().getUsername()), therapistName(saved), whenLabel(saved));
         return toResponse(saved);
     }
 

@@ -50,6 +50,21 @@ public class ForumDto {
         public void setIsAnonymous(Boolean isAnonymous) { this.isAnonymous = isAnonymous; }
     }
 
+    // ── Report Request (a post OR a comment) ──────────────────────
+    public static class ReportRequest {
+        private UUID postId;   // set to report a post
+        private UUID replyId;  // set to report a comment
+        @Size(max = 1000, message = "Reason must be under 1000 characters")
+        private String reason;
+
+        public UUID getPostId() { return postId; }
+        public UUID getReplyId() { return replyId; }
+        public String getReason() { return reason; }
+        public void setPostId(UUID postId) { this.postId = postId; }
+        public void setReplyId(UUID replyId) { this.replyId = replyId; }
+        public void setReason(String reason) { this.reason = reason; }
+    }
+
     // ── Reply Response ────────────────────────────────────────────
     public static class ReplyResponse {
         private UUID id;

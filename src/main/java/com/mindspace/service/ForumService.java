@@ -9,6 +9,8 @@ import com.mindspace.repository.ForumPostLikeRepository;
 import com.mindspace.repository.ForumPostRepository;
 import com.mindspace.repository.ForumReplyRepository;
 import com.mindspace.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,8 @@ import java.util.UUID;
 @Service
 public class ForumService {
 
+    private static final Logger log = LoggerFactory.getLogger(ForumService.class);
+
     private final ForumPostRepository forumPostRepository;
     private final ForumReplyRepository forumReplyRepository;
     private final ForumPostLikeRepository forumPostLikeRepository;
@@ -30,6 +34,9 @@ public class ForumService {
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
+
+    @Value("${app.contact.recipient:kelvinkiumbe589@gmail.com}")
+    private String adminRecipient;
 
     public ForumService(ForumPostRepository forumPostRepository,
                         ForumReplyRepository forumReplyRepository,
@@ -95,6 +102,45 @@ public class ForumService {
         response.setCreatedAt(post.getCreatedAt());
         response.setReplies(replies.stream().map(r -> toReplyResponse(r, currentUser)).toList());
         return response;
+    }
+
+    // ── Report a post or comment to the admin ─────────────────────
+    public void report(String email, ForumDto.ReportRequest req) {
+        User me = getUser(email);
+        String reason = (req.getReason() != null && !req.getReason().isBlank())
+                ? req.getReason() : "(no reason given)";
+
+        String what, author, snippet, ref;
+        if (req.getReplyId() != null) {
+            ForumReply r = forumReplyRepository.findById(req.getReplyId()).orElse(null);
+            what = "comment";
+            author = r != null ? resolveAuthor(r.getUser(), r.getIsAnonymous()) : "(unknown)";
+            snippet = r != null ? r.getContent() : "(already deleted)";
+            ref = req.getReplyId().toString();
+        } else if (req.getPostId() != null) {
+            ForumPost p = forumPostRepository.findById(req.getPostId()).orElse(null);
+            what = "post";
+            author = p != null ? resolveAuthor(p.getUser(), p.getIsAnonymous()) : "(unknown)";
+            snippet = p != null ? (p.getTitle() + " — " + p.getContent()) : "(already deleted)";
+            ref = req.getPostId().toString();
+        } else {
+            throw new IllegalArgumentException("Nothing to report.");
+        }
+        if (snippet != null && snippet.length() > 500) snippet = snippet.substring(0, 500) + "…";
+
+        String subject = "MindSpace forum report: " + me.getUsername() + " reported a " + what;
+        final String body = "Reporter: " + me.getUsername() + " <" + me.getEmail() + ">\n"
+                + "Reported " + what + " by: " + author + "\n"
+                + what + " id: " + ref + "\n"
+                + "\nContent:\n" + snippet
+                + "\n\nReason:\n" + reason
+                + "\n\nReview in the community forum and take action if warranted.";
+        Thread t = new Thread(() -> {
+            try { mailService.send(adminRecipient, subject, body); }
+            catch (Exception e) { log.warn("forum report email failed: {}", e.getMessage()); }
+        }, "forum-report");
+        t.setDaemon(true);
+        t.start();
     }
 
     // ── Record a view (impression) ────────────────────────────────

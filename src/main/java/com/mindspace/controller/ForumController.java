@@ -47,6 +47,15 @@ public class ForumController {
         return ResponseEntity.ok(forumService.getPostById(id, email));
     }
 
+    // POST /api/forum/report — report a post or comment to the admin.
+    @PostMapping("/report")
+    public ResponseEntity<java.util.Map<String, Object>> report(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody ForumDto.ReportRequest request) {
+        forumService.report(userDetails.getUsername(), request);
+        return ResponseEntity.ok(java.util.Map.of("reported", true));
+    }
+
     // POST /api/forum/posts/{id}/view — record an impression (public, no auth).
     @PostMapping("/posts/{id}/view")
     public ResponseEntity<java.util.Map<String, Object>> recordView(@PathVariable UUID id) {

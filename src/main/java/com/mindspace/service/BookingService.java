@@ -67,13 +67,20 @@ public class BookingService {
                 .orElseThrow(() -> new IllegalArgumentException("Therapist not found"));
 
         boolean physical = "PHYSICAL".equalsIgnoreCase(req.getSessionType());
-        int amount = physical ? TherapistService.effectivePhysicalPrice(profile) : profile.getPriceOnline();
+
+        // Online sessions are billed by the call time the client picks (default 60m,
+        // in whole hours). amount = online hourly rate * hours. Physical is a flat visit.
+        int durationMinutes = normalizeDuration(req.getDurationMinutes());
+        int amount = physical
+                ? TherapistService.effectivePhysicalPrice(profile)
+                : (int) Math.round(profile.getPriceOnline() * (durationMinutes / 60.0));
 
         Booking b = new Booking();
         b.setClient(client);
         b.setTherapist(therapist);
         b.setSessionType(physical ? "PHYSICAL" : "ONLINE");
         b.setAmount(amount);
+        b.setDurationMinutes(physical ? 60 : durationMinutes);
         b.setScheduledAt(parseWhen(req.getScheduledAt()));
         b.setClientPhone(req.getPhone());
         b.setStatus(Booking.Status.PENDING_PAYMENT);
@@ -309,6 +316,14 @@ public class BookingService {
         t.start();
     }
 
+    // Call time the client picks, in 30-minute steps, clamped to 30 min .. 4 hours.
+    // Defaults to 60 minutes when unspecified.
+    private int normalizeDuration(Integer minutes) {
+        if (minutes == null || minutes <= 0) return 60;
+        int m = Math.round(minutes / 30.0f) * 30;
+        return Math.max(30, Math.min(240, m));
+    }
+
     private LocalDateTime parseWhen(String iso) {
         if (iso == null || iso.isBlank()) return null;
         try {
@@ -330,6 +345,9 @@ public class BookingService {
         r.clientEmail = null;
         r.sessionType = b.getSessionType();
         r.amount = b.getAmount();
+        r.durationMinutes = b.getDurationMinutes();
+        r.remainingSeconds = CallSessionService.remainingSeconds(b);
+        r.callState = b.getCallState().name();
         // scheduledAt is the user-picked wall-clock time — keep it naive (no zone).
         r.scheduledAt = b.getScheduledAt() == null ? null : b.getScheduledAt().toString();
         r.status = b.getStatus().name();

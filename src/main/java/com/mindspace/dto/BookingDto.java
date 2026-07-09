@@ -14,15 +14,18 @@ public class BookingDto {
 
         private String scheduledAt;  // ISO-8601, e.g. 2026-07-10T15:00
         private String phone;        // client's phone, for WhatsApp session messages
+        private Integer durationMinutes; // ONLINE only: total call time paid for (e.g. 60, 120)
 
         public String getTherapistId() { return therapistId; }
         public String getSessionType() { return sessionType; }
         public String getScheduledAt() { return scheduledAt; }
         public String getPhone() { return phone; }
+        public Integer getDurationMinutes() { return durationMinutes; }
         public void setTherapistId(String therapistId) { this.therapistId = therapistId; }
         public void setSessionType(String sessionType) { this.sessionType = sessionType; }
         public void setScheduledAt(String scheduledAt) { this.scheduledAt = scheduledAt; }
         public void setPhone(String phone) { this.phone = phone; }
+        public void setDurationMinutes(Integer durationMinutes) { this.durationMinutes = durationMinutes; }
     }
 
     public static class PaidRequest {
@@ -45,6 +48,10 @@ public class BookingDto {
         public String clientEmail;
         public String sessionType;
         public int amount;
+        // ONLINE call time budget (minutes paid for) + live call bookkeeping.
+        public int durationMinutes;
+        public int remainingSeconds;
+        public String callState; // NONE | RINGING | LIVE | ENDED
         public String scheduledAt;
         public String status;
         public String createdAt;

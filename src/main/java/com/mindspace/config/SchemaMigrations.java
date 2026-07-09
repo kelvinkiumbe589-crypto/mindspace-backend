@@ -37,6 +37,12 @@ public class SchemaMigrations implements ApplicationRunner {
         // Don't nudge users about admin replies that already existed before this
         // feature shipped — treat older replies as already seen.
         run("UPDATE support_messages SET seen_by_user = true WHERE from_admin = true AND created_at < now() - interval '12 hours'");
+
+        // Online-call time budget: bookings created before this feature have no
+        // duration — give them the default 60-minute budget and an idle call state.
+        run("UPDATE bookings SET duration_minutes = 60 WHERE duration_minutes IS NULL OR duration_minutes = 0");
+        run("UPDATE bookings SET consumed_seconds = 0 WHERE consumed_seconds IS NULL");
+        run("UPDATE bookings SET call_state = 'NONE' WHERE call_state IS NULL");
     }
 
     private void run(String sql) {

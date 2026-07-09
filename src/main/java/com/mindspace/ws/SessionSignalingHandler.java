@@ -1,5 +1,6 @@
 package com.mindspace.ws;
 
+import com.mindspace.service.CallSessionService;
 import com.mindspace.service.SessionRoomService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,12 +28,14 @@ public class SessionSignalingHandler extends TextWebSocketHandler {
     private static final Logger log = LoggerFactory.getLogger(SessionSignalingHandler.class);
 
     private final SessionRoomService roomService;
+    private final CallSessionService callService;
 
     // bookingId -> the (max 2) connected peers in that room.
     private final Map<String, CopyOnWriteArrayList<WebSocketSession>> rooms = new ConcurrentHashMap<>();
 
-    public SessionSignalingHandler(SessionRoomService roomService) {
+    public SessionSignalingHandler(SessionRoomService roomService, CallSessionService callService) {
         this.roomService = roomService;
+        this.callService = callService;
     }
 
     @Override
@@ -70,6 +73,11 @@ public class SessionSignalingHandler extends TextWebSocketHandler {
                 send(other, "{\"type\":\"peer-joined\"}");
             }
         }
+
+        // Both parties are now present — start charging the connected-time budget.
+        if (room.size() == 2) {
+            safely(() -> callService.onBothConnected(bookingId));
+        }
     }
 
     @Override
@@ -96,7 +104,29 @@ public class SessionSignalingHandler extends TextWebSocketHandler {
         for (WebSocketSession other : room) {
             if (other.isOpen()) send(other, "{\"type\":\"peer-left\"}");
         }
+        // No longer a full room — bank the elapsed connected time (idempotent).
+        if (room.size() < 2) {
+            safely(() -> callService.onRoomDrain(bookingId));
+        }
         if (room.isEmpty()) rooms.remove(bookingId);
+    }
+
+    /**
+     * Force-close a room (both peers), first telling them why (e.g. "time-up").
+     * Called from the budget scheduler when the paid call time runs out.
+     */
+    public void closeRoom(String bookingId, String reason) {
+        CopyOnWriteArrayList<WebSocketSession> room = rooms.get(bookingId);
+        if (room == null) return;
+        for (WebSocketSession s : room) {
+            send(s, "{\"type\":\"" + reason + "\"}");
+            try { if (s.isOpen()) s.close(CloseStatus.NORMAL); } catch (Exception ignored) {}
+        }
+    }
+
+    // DB-touching budget hooks must never break the socket lifecycle.
+    private void safely(Runnable r) {
+        try { r.run(); } catch (Exception e) { log.debug("call budget hook failed: {}", e.getMessage()); }
     }
 
     private void send(WebSocketSession session, String json) {

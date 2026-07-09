@@ -33,6 +33,24 @@ public class Booking {
     @Column(nullable = false)
     private int amount; // KES
 
+    // For ONLINE sessions: the total call time (minutes) the client paid for,
+    // chosen at booking. amount = online rate * (durationMinutes / 60).
+    @Column(name = "duration_minutes", nullable = false, columnDefinition = "int default 60")
+    private int durationMinutes = 60;
+
+    // Connected-time budget bookkeeping for the video call. Only time both peers
+    // are actually connected is deducted; gaps between calls don't count.
+    @Column(name = "consumed_seconds", nullable = false, columnDefinition = "int default 0")
+    private int consumedSeconds = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "call_state", length = 12)
+    private CallState callState = CallState.NONE;
+
+    // When the current LIVE segment began (both peers connected). Null when idle.
+    @Column(name = "segment_started_at")
+    private LocalDateTime segmentStartedAt;
+
     @Column(name = "scheduled_at")
     private LocalDateTime scheduledAt;
 
@@ -64,6 +82,9 @@ public class Booking {
 
     public enum Status { PENDING_PAYMENT, AWAITING_APPROVAL, APPROVED, DONE, FAILED }
 
+    /** Online-call lifecycle: NONE (idle), RINGING (invite sent), LIVE (both on call), ENDED (budget spent). */
+    public enum CallState { NONE, RINGING, LIVE, ENDED }
+
     public Booking() {}
 
     public UUID getId() { return id; }
@@ -71,6 +92,10 @@ public class Booking {
     public User getTherapist() { return therapist; }
     public String getSessionType() { return sessionType; }
     public int getAmount() { return amount; }
+    public int getDurationMinutes() { return durationMinutes; }
+    public int getConsumedSeconds() { return consumedSeconds; }
+    public CallState getCallState() { return callState == null ? CallState.NONE : callState; }
+    public LocalDateTime getSegmentStartedAt() { return segmentStartedAt; }
     public LocalDateTime getScheduledAt() { return scheduledAt; }
     public Status getStatus() { return status; }
     public String getOrderTrackingId() { return orderTrackingId; }
@@ -84,6 +109,10 @@ public class Booking {
     public void setTherapist(User therapist) { this.therapist = therapist; }
     public void setSessionType(String sessionType) { this.sessionType = sessionType; }
     public void setAmount(int amount) { this.amount = amount; }
+    public void setDurationMinutes(int durationMinutes) { this.durationMinutes = durationMinutes; }
+    public void setConsumedSeconds(int consumedSeconds) { this.consumedSeconds = consumedSeconds; }
+    public void setCallState(CallState callState) { this.callState = callState; }
+    public void setSegmentStartedAt(LocalDateTime segmentStartedAt) { this.segmentStartedAt = segmentStartedAt; }
     public void setScheduledAt(LocalDateTime scheduledAt) { this.scheduledAt = scheduledAt; }
     public void setStatus(Status status) { this.status = status; }
     public void setOrderTrackingId(String orderTrackingId) { this.orderTrackingId = orderTrackingId; }

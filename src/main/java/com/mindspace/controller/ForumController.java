@@ -47,6 +47,13 @@ public class ForumController {
         return ResponseEntity.ok(forumService.getPostById(id, email));
     }
 
+    // POST /api/forum/posts/{id}/view — record an impression (public, no auth).
+    @PostMapping("/posts/{id}/view")
+    public ResponseEntity<java.util.Map<String, Object>> recordView(@PathVariable UUID id) {
+        int views = forumService.recordView(id);
+        return ResponseEntity.ok(java.util.Map.of("viewCount", views));
+    }
+
     // POST /api/forum/posts/{id}/like — toggle the signed-in user's like.
     @PostMapping("/posts/{id}/like")
     public ResponseEntity<ForumDto.LikeResponse> toggleLike(

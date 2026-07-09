@@ -89,11 +89,22 @@ public class ForumService {
         response.setCategory(post.getCategory());
         response.setMediaUrl(post.getMediaUrl());
         response.setMediaType(post.getMediaType());
+        response.setViewCount(post.getViewCount());
         response.setLikeCount((int) forumPostLikeRepository.countByPost(post));
         response.setLikedByMe(currentUser != null && forumPostLikeRepository.existsByPostAndUser(post, currentUser));
         response.setCreatedAt(post.getCreatedAt());
         response.setReplies(replies.stream().map(r -> toReplyResponse(r, currentUser)).toList());
         return response;
+    }
+
+    // ── Record a view (impression) ────────────────────────────────
+    // Public + best-effort: no auth, de-duplication is handled client-side
+    // (once per post per session). Returns the new count, or -1 if not found.
+    @Transactional
+    public int recordView(UUID postId) {
+        return forumPostRepository.incrementViewCount(postId) > 0
+                ? forumPostRepository.findById(postId).map(ForumPost::getViewCount).orElse(-1)
+                : -1;
     }
 
     // ── Toggle a like on a post ───────────────────────────────────
@@ -218,6 +229,7 @@ public class ForumService {
         response.setCategory(post.getCategory());
         response.setMediaUrl(post.getMediaUrl());
         response.setMediaType(post.getMediaType());
+        response.setViewCount(post.getViewCount());
         response.setReplyCount(post.getReplies() != null ? post.getReplies().size() : 0);
         response.setLikeCount((int) forumPostLikeRepository.countByPost(post));
         response.setLikedByMe(currentUser != null && forumPostLikeRepository.existsByPostAndUser(post, currentUser));

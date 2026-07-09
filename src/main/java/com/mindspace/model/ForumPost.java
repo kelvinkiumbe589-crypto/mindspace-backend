@@ -39,6 +39,11 @@ public class ForumPost {
     @Column(name = "media_type", length = 10)
     private String mediaType;
 
+    // Total times this post has been viewed (impressions). Incremented atomically;
+    // the default lets ddl-auto=update add the column to existing rows.
+    @Column(name = "view_count", nullable = false, columnDefinition = "integer default 0")
+    private int viewCount = 0;
+
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ForumReply> replies;
 
@@ -57,6 +62,7 @@ public class ForumPost {
     public String getCategory() { return category; }
     public String getMediaUrl() { return mediaUrl; }
     public String getMediaType() { return mediaType; }
+    public int getViewCount() { return viewCount; }
     public List<ForumReply> getReplies() { return replies; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
@@ -69,6 +75,7 @@ public class ForumPost {
     public void setCategory(String category) { this.category = category; }
     public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
     public void setMediaType(String mediaType) { this.mediaType = mediaType; }
+    public void setViewCount(int viewCount) { this.viewCount = viewCount; }
     public void setReplies(List<ForumReply> replies) { this.replies = replies; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

@@ -70,6 +70,8 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/telegram/webhook/**").permitAll()
                         // Anyone can read the community forum; posting/replying needs an account.
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/forum/**").permitAll()
+                        // Recording a view is anonymous (matched before the authenticated catch-all).
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/forum/posts/*/view").permitAll()
                         .requestMatchers("/api/forum/**").authenticated()
                         // Reminder batch trigger (guarded by a shared key in the controller) and the
                         // email unsubscribe link are public; managing the preference needs a session.

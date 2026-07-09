@@ -96,6 +96,7 @@ public class ForumDto {
         private String category;
         private String mediaUrl;
         private String mediaType;
+        private int viewCount;
         private int replyCount;
         private int likeCount;
         private boolean likedByMe;
@@ -109,6 +110,7 @@ public class ForumDto {
         public String getCategory() { return category; }
         public String getMediaUrl() { return mediaUrl; }
         public String getMediaType() { return mediaType; }
+        public int getViewCount() { return viewCount; }
         public int getReplyCount() { return replyCount; }
         public int getLikeCount() { return likeCount; }
         public boolean isLikedByMe() { return likedByMe; }
@@ -121,6 +123,7 @@ public class ForumDto {
         public void setCategory(String category) { this.category = category; }
         public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
         public void setMediaType(String mediaType) { this.mediaType = mediaType; }
+        public void setViewCount(int viewCount) { this.viewCount = viewCount; }
         public void setReplyCount(int replyCount) { this.replyCount = replyCount; }
         public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
         public void setLikedByMe(boolean likedByMe) { this.likedByMe = likedByMe; }
@@ -137,6 +140,7 @@ public class ForumDto {
         private String category;
         private String mediaUrl;
         private String mediaType;
+        private int viewCount;
         private int likeCount;
         private boolean likedByMe;
         private List<ReplyResponse> replies;
@@ -149,6 +153,7 @@ public class ForumDto {
         public String getCategory() { return category; }
         public String getMediaUrl() { return mediaUrl; }
         public String getMediaType() { return mediaType; }
+        public int getViewCount() { return viewCount; }
         public int getLikeCount() { return likeCount; }
         public boolean isLikedByMe() { return likedByMe; }
         public List<ReplyResponse> getReplies() { return replies; }
@@ -160,6 +165,7 @@ public class ForumDto {
         public void setCategory(String category) { this.category = category; }
         public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
         public void setMediaType(String mediaType) { this.mediaType = mediaType; }
+        public void setViewCount(int viewCount) { this.viewCount = viewCount; }
         public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
         public void setLikedByMe(boolean likedByMe) { this.likedByMe = likedByMe; }
         public void setReplies(List<ReplyResponse> replies) { this.replies = replies; }

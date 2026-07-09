@@ -30,10 +30,17 @@ public class ChatDto {
     }
 
     public static class SendRequest {
-        @NotBlank(message = "Message cannot be empty")
+        // No @NotBlank: a message may be media-only (image/video with no caption).
+        // The service enforces that at least text or media is present.
         private String content;
+        private String mediaUrl;
+        private String mediaType;
         public String getContent() { return content; }
+        public String getMediaUrl() { return mediaUrl; }
+        public String getMediaType() { return mediaType; }
         public void setContent(String content) { this.content = content; }
+        public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
+        public void setMediaType(String mediaType) { this.mediaType = mediaType; }
     }
 
     public static class AddMembersRequest {
@@ -106,18 +113,24 @@ public class ChatDto {
         private UUID senderId;
         private String senderName;
         private String content;
+        private String mediaUrl;
+        private String mediaType;
         private boolean mine;
         private boolean deleted;
         private LocalDateTime createdAt;
         public MessageInfo(UUID id, UUID senderId, String senderName, String content,
+                           String mediaUrl, String mediaType,
                            boolean mine, boolean deleted, LocalDateTime createdAt) {
             this.id = id; this.senderId = senderId; this.senderName = senderName;
-            this.content = content; this.mine = mine; this.deleted = deleted; this.createdAt = createdAt;
+            this.content = content; this.mediaUrl = mediaUrl; this.mediaType = mediaType;
+            this.mine = mine; this.deleted = deleted; this.createdAt = createdAt;
         }
         public UUID getId() { return id; }
         public UUID getSenderId() { return senderId; }
         public String getSenderName() { return senderName; }
         public String getContent() { return content; }
+        public String getMediaUrl() { return mediaUrl; }
+        public String getMediaType() { return mediaType; }
         public boolean isMine() { return mine; }
         public boolean isDeleted() { return deleted; }
         public LocalDateTime getCreatedAt() { return createdAt; }

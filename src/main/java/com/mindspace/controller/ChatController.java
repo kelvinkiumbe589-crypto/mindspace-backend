@@ -69,7 +69,7 @@ public class ChatController {
             @AuthenticationPrincipal UserDetails user,
             @PathVariable UUID id,
             @Valid @RequestBody ChatDto.SendRequest req) {
-        return ResponseEntity.ok(chatService.sendMessage(email(user), id, req.getContent()));
+        return ResponseEntity.ok(chatService.sendMessage(email(user), id, req));
     }
 
     // POST /api/chat/conversations/{id}/members  {memberIds}

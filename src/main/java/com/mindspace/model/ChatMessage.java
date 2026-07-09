@@ -29,6 +29,14 @@ public class ChatMessage {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    // Optional single attachment, stored as a data URL (no object storage).
+    // mediaType is "image" or "video".
+    @Column(name = "media_url", columnDefinition = "text")
+    private String mediaUrl;
+
+    @Column(name = "media_type", length = 10)
+    private String mediaType;
+
     @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean deleted = false;
 
@@ -48,6 +56,8 @@ public class ChatMessage {
     public Conversation getConversation() { return conversation; }
     public User getSender() { return sender; }
     public String getContent() { return content; }
+    public String getMediaUrl() { return mediaUrl; }
+    public String getMediaType() { return mediaType; }
     public boolean isDeleted() { return deleted; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
@@ -55,6 +65,8 @@ public class ChatMessage {
     public void setConversation(Conversation conversation) { this.conversation = conversation; }
     public void setSender(User sender) { this.sender = sender; }
     public void setContent(String content) { this.content = content; }
+    public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
+    public void setMediaType(String mediaType) { this.mediaType = mediaType; }
     public void setDeleted(boolean deleted) { this.deleted = deleted; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

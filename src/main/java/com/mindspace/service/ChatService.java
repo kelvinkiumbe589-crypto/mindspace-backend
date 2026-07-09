@@ -117,7 +117,7 @@ public class ChatService {
             }
 
             ChatMessage last = messageRepo.findTopByConversationOrderByCreatedAtDesc(c);
-            s.setLastMessage(last == null ? null : (last.isDeleted() ? "Message deleted" : last.getContent()));
+            s.setLastMessage(messagePreview(last));
             s.setLastMessageAt(c.getLastMessageAt());
             LocalDateTime since = cm.getLastReadAt() != null ? cm.getLastReadAt() : EPOCH;
             s.setUnread(messageRepo.countByConversationAndCreatedAtAfterAndSenderIdNot(c, since, me.getId()));
@@ -217,14 +217,16 @@ public class ChatService {
     }
 
     // ── Send a message ────────────────────────────────────────────
-    public ChatDto.MessageInfo sendMessage(String email, UUID convId, String content) {
+    public ChatDto.MessageInfo sendMessage(String email, UUID convId, ChatDto.SendRequest req) {
         User me = getUser(email);
         Conversation c = conversationRepo.findById(convId)
                 .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
         ConversationMember mine = memberRepo.findByConversationAndUser(c, me)
                 .orElseThrow(() -> new IllegalArgumentException("You're not part of this conversation."));
-        String text = content == null ? "" : content.trim();
-        if (text.isEmpty()) throw new IllegalArgumentException("Message cannot be empty.");
+        String text = req.getContent() == null ? "" : req.getContent().trim();
+        boolean hasMedia = req.getMediaUrl() != null && !req.getMediaUrl().isBlank()
+                && ("image".equals(req.getMediaType()) || "video".equals(req.getMediaType()));
+        if (text.isEmpty() && !hasMedia) throw new IllegalArgumentException("Message cannot be empty.");
 
         List<ConversationMember> members = memberRepo.findByConversation(c);
         if (c.getType() == Conversation.Type.DIRECT) {
@@ -235,7 +237,9 @@ public class ChatService {
             }
         }
 
-        ChatMessage m = messageRepo.save(new ChatMessage(c, me, text));
+        ChatMessage m = new ChatMessage(c, me, text);
+        if (hasMedia) { m.setMediaUrl(req.getMediaUrl()); m.setMediaType(req.getMediaType()); }
+        m = messageRepo.save(m);
         c.setLastMessageAt(m.getCreatedAt() != null ? m.getCreatedAt() : LocalDateTime.now());
         conversationRepo.save(c);
         mine.setLastReadAt(LocalDateTime.now());
@@ -374,7 +378,8 @@ public class ChatService {
             // Offline + not muted → web push so they don't miss it.
             if (!cm.isMuted() && !wsHandler.isOnline(u.getId())) {
                 String title = c.getType() == Conversation.Type.GROUP ? c.getName() : sender.getUsername();
-                String preview = m.getContent().length() > 80 ? m.getContent().substring(0, 80) + "…" : m.getContent();
+                String raw = messagePreview(m);
+                String preview = raw != null && raw.length() > 80 ? raw.substring(0, 80) + "…" : raw;
                 String bodyText = c.getType() == Conversation.Type.GROUP ? sender.getUsername() + ": " + preview : preview;
                 try { webPushService.sendToUser(u, title, bodyText, "/messages"); } catch (Exception ignored) {}
             }
@@ -405,9 +410,22 @@ public class ChatService {
         boolean mine = viewer != null && m.getSender() != null && m.getSender().getId().equals(viewer.getId());
         String senderName = m.getSender() != null ? m.getSender().getUsername() : "Unknown";
         String content = m.isDeleted() ? "" : m.getContent();
+        String mediaUrl = m.isDeleted() ? null : m.getMediaUrl();
+        String mediaType = m.isDeleted() ? null : m.getMediaType();
         return new ChatDto.MessageInfo(m.getId(),
                 m.getSender() != null ? m.getSender().getId() : null,
-                senderName, content, mine, m.isDeleted(), m.getCreatedAt());
+                senderName, content, mediaUrl, mediaType, mine, m.isDeleted(), m.getCreatedAt());
+    }
+
+    // Short text preview for conversation lists and push notifications — a
+    // media-only message has no text, so describe the attachment instead.
+    private String messagePreview(ChatMessage m) {
+        if (m == null) return null;
+        if (m.isDeleted()) return "Message deleted";
+        if (m.getContent() != null && !m.getContent().isBlank()) return m.getContent();
+        if ("image".equals(m.getMediaType())) return "📷 Photo";
+        if ("video".equals(m.getMediaType())) return "🎥 Video";
+        return "";
     }
 
     private boolean isBlockedEitherWay(User a, User b) {

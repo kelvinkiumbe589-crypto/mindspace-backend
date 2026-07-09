@@ -42,6 +42,7 @@ public class AdminController {
     private final RatingService ratingService;
     private final AnalyticsService analyticsService;
 
+    
     public AdminController(UserRepository userRepository, MoodEntryRepository moodEntryRepository,
                            SupportMessageRepository supportMessageRepository,
                            TherapistService therapistService, BookingRepository bookingRepository,

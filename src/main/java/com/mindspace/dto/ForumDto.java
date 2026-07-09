@@ -20,15 +20,21 @@ public class ForumDto {
 
         private Boolean isAnonymous = true;
         private String category = "general";
+        private String mediaUrl;
+        private String mediaType;
 
         public String getTitle() { return title; }
         public String getContent() { return content; }
         public Boolean getIsAnonymous() { return isAnonymous; }
         public String getCategory() { return category; }
+        public String getMediaUrl() { return mediaUrl; }
+        public String getMediaType() { return mediaType; }
         public void setTitle(String title) { this.title = title; }
         public void setContent(String content) { this.content = content; }
         public void setIsAnonymous(Boolean isAnonymous) { this.isAnonymous = isAnonymous; }
         public void setCategory(String category) { this.category = category; }
+        public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
+        public void setMediaType(String mediaType) { this.mediaType = mediaType; }
     }
 
     // ── Create Reply Request ──────────────────────────────────────
@@ -88,6 +94,8 @@ public class ForumDto {
         private String content;
         private String author;
         private String category;
+        private String mediaUrl;
+        private String mediaType;
         private int replyCount;
         private int likeCount;
         private boolean likedByMe;
@@ -99,6 +107,8 @@ public class ForumDto {
         public String getContent() { return content; }
         public String getAuthor() { return author; }
         public String getCategory() { return category; }
+        public String getMediaUrl() { return mediaUrl; }
+        public String getMediaType() { return mediaType; }
         public int getReplyCount() { return replyCount; }
         public int getLikeCount() { return likeCount; }
         public boolean isLikedByMe() { return likedByMe; }
@@ -109,6 +119,8 @@ public class ForumDto {
         public void setContent(String content) { this.content = content; }
         public void setAuthor(String author) { this.author = author; }
         public void setCategory(String category) { this.category = category; }
+        public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
+        public void setMediaType(String mediaType) { this.mediaType = mediaType; }
         public void setReplyCount(int replyCount) { this.replyCount = replyCount; }
         public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
         public void setLikedByMe(boolean likedByMe) { this.likedByMe = likedByMe; }
@@ -123,6 +135,8 @@ public class ForumDto {
         private String content;
         private String author;
         private String category;
+        private String mediaUrl;
+        private String mediaType;
         private int likeCount;
         private boolean likedByMe;
         private List<ReplyResponse> replies;
@@ -133,6 +147,8 @@ public class ForumDto {
         public String getContent() { return content; }
         public String getAuthor() { return author; }
         public String getCategory() { return category; }
+        public String getMediaUrl() { return mediaUrl; }
+        public String getMediaType() { return mediaType; }
         public int getLikeCount() { return likeCount; }
         public boolean isLikedByMe() { return likedByMe; }
         public List<ReplyResponse> getReplies() { return replies; }
@@ -142,6 +158,8 @@ public class ForumDto {
         public void setContent(String content) { this.content = content; }
         public void setAuthor(String author) { this.author = author; }
         public void setCategory(String category) { this.category = category; }
+        public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
+        public void setMediaType(String mediaType) { this.mediaType = mediaType; }
         public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
         public void setLikedByMe(boolean likedByMe) { this.likedByMe = likedByMe; }
         public void setReplies(List<ReplyResponse> replies) { this.replies = replies; }

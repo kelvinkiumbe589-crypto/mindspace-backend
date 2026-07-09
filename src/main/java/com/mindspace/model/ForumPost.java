@@ -31,6 +31,14 @@ public class ForumPost {
     @Column(length = 50)
     private String category;
 
+    // Optional single attachment, stored as a data URL (no object storage).
+    // mediaType is "image" or "video".
+    @Column(name = "media_url", columnDefinition = "text")
+    private String mediaUrl;
+
+    @Column(name = "media_type", length = 10)
+    private String mediaType;
+
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ForumReply> replies;
 
@@ -47,6 +55,8 @@ public class ForumPost {
     public String getContent() { return content; }
     public Boolean getIsAnonymous() { return isAnonymous; }
     public String getCategory() { return category; }
+    public String getMediaUrl() { return mediaUrl; }
+    public String getMediaType() { return mediaType; }
     public List<ForumReply> getReplies() { return replies; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
@@ -57,6 +67,8 @@ public class ForumPost {
     public void setContent(String content) { this.content = content; }
     public void setIsAnonymous(Boolean isAnonymous) { this.isAnonymous = isAnonymous; }
     public void setCategory(String category) { this.category = category; }
+    public void setMediaUrl(String mediaUrl) { this.mediaUrl = mediaUrl; }
+    public void setMediaType(String mediaType) { this.mediaType = mediaType; }
     public void setReplies(List<ForumReply> replies) { this.replies = replies; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

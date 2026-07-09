@@ -57,6 +57,7 @@ public class ForumService {
         post.setContent(request.getContent());
         post.setIsAnonymous(request.getIsAnonymous());
         post.setCategory(request.getCategory());
+        applyMedia(post, request.getMediaUrl(), request.getMediaType());
 
         ForumPost saved = forumPostRepository.save(post);
         return toPostResponse(saved, user);
@@ -86,6 +87,8 @@ public class ForumService {
         response.setContent(post.getContent());
         response.setAuthor(resolveAuthor(post.getUser(), post.getIsAnonymous()));
         response.setCategory(post.getCategory());
+        response.setMediaUrl(post.getMediaUrl());
+        response.setMediaType(post.getMediaType());
         response.setLikeCount((int) forumPostLikeRepository.countByPost(post));
         response.setLikedByMe(currentUser != null && forumPostLikeRepository.existsByPostAndUser(post, currentUser));
         response.setCreatedAt(post.getCreatedAt());
@@ -192,6 +195,15 @@ public class ForumService {
         return userRepository.findByEmail(email).orElse(null);
     }
 
+    // Attach (or clear) a post's single media item. Only image/video are accepted;
+    // anything else is dropped so a bad client can't store arbitrary blobs.
+    private void applyMedia(ForumPost post, String mediaUrl, String mediaType) {
+        boolean hasMedia = mediaUrl != null && !mediaUrl.isBlank()
+                && ("image".equals(mediaType) || "video".equals(mediaType));
+        post.setMediaUrl(hasMedia ? mediaUrl : null);
+        post.setMediaType(hasMedia ? mediaType : null);
+    }
+
     private String resolveAuthor(User user, Boolean isAnonymous) {
         if (isAnonymous == null || isAnonymous || user == null) return "Anonymous";
         return user.getUsername();
@@ -204,6 +216,8 @@ public class ForumService {
         response.setContent(post.getContent());
         response.setAuthor(resolveAuthor(post.getUser(), post.getIsAnonymous()));
         response.setCategory(post.getCategory());
+        response.setMediaUrl(post.getMediaUrl());
+        response.setMediaType(post.getMediaType());
         response.setReplyCount(post.getReplies() != null ? post.getReplies().size() : 0);
         response.setLikeCount((int) forumPostLikeRepository.countByPost(post));
         response.setLikedByMe(currentUser != null && forumPostLikeRepository.existsByPostAndUser(post, currentUser));
@@ -223,6 +237,7 @@ public class ForumService {
         post.setTitle(req.getTitle());
         post.setContent(req.getContent());
         if (req.getCategory() != null && !req.getCategory().isBlank()) post.setCategory(req.getCategory());
+        applyMedia(post, req.getMediaUrl(), req.getMediaType());
         return toPostResponse(forumPostRepository.save(post), user);
     }
 

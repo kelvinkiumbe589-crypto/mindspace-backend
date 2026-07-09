@@ -76,6 +76,10 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/reminders/run").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/reminders/unsubscribe").permitAll()
                         .requestMatchers("/api/reminders/**").authenticated()
+                        // Onboarding/marketing drip: same shape — key-guarded trigger + public unsubscribe.
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/campaigns/run").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/campaigns/unsubscribe").permitAll()
+                        .requestMatchers("/api/campaigns/**").authenticated()
                         .requestMatchers("/api/moods/**").authenticated()
                         .anyRequest().authenticated()
                 )

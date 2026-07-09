@@ -53,6 +53,16 @@ public class User {
     @Column(name = "last_reminder_date")
     private LocalDate lastReminderDate;
 
+    // Onboarding/marketing drip emails — a SEPARATE opt-out from mood reminders, so
+    // a user can keep reminders but stop promos (or vice-versa). `lastCampaignStep`
+    // is the highest drip step already emailed (0 = none yet), so the batch never
+    // re-sends a step. Defaults let ddl-auto=update add the columns to existing rows.
+    @Column(name = "marketing_email_enabled", nullable = false, columnDefinition = "boolean default true")
+    private boolean marketingEmailEnabled = true;
+
+    @Column(name = "last_campaign_step", nullable = false, columnDefinition = "integer default 0")
+    private int lastCampaignStep = 0;
+
     // Telegram bot link: chat id once connected, and a short-lived code used to connect.
     @Column(name = "telegram_chat_id")
     private Long telegramChatId;
@@ -108,6 +118,8 @@ public class User {
     public Role getRole() { return role; }
     public boolean isMoodReminderEnabled() { return moodReminderEnabled; }
     public LocalDate getLastReminderDate() { return lastReminderDate; }
+    public boolean isMarketingEmailEnabled() { return marketingEmailEnabled; }
+    public int getLastCampaignStep() { return lastCampaignStep; }
     public Long getTelegramChatId() { return telegramChatId; }
     public String getTelegramLinkCode() { return telegramLinkCode; }
     public String getReferralCode() { return referralCode; }
@@ -128,6 +140,8 @@ public class User {
     public void setRole(Role role) { this.role = role; }
     public void setMoodReminderEnabled(boolean moodReminderEnabled) { this.moodReminderEnabled = moodReminderEnabled; }
     public void setLastReminderDate(LocalDate lastReminderDate) { this.lastReminderDate = lastReminderDate; }
+    public void setMarketingEmailEnabled(boolean marketingEmailEnabled) { this.marketingEmailEnabled = marketingEmailEnabled; }
+    public void setLastCampaignStep(int lastCampaignStep) { this.lastCampaignStep = lastCampaignStep; }
     public void setTelegramChatId(Long telegramChatId) { this.telegramChatId = telegramChatId; }
     public void setTelegramLinkCode(String telegramLinkCode) { this.telegramLinkCode = telegramLinkCode; }
     public void setReferralCode(String referralCode) { this.referralCode = referralCode; }
